@@ -17,6 +17,7 @@ import {
   BadgeCheck,
   ExternalLink,
   Code2,
+  MessageCircle,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -76,14 +77,6 @@ export default function HomePage() {
             <span className="badge-online">
               <span className="pulse-dot" /> Online • Private Bot
             </span>
-            <a
-              href="#contact"
-              className="btn-secondary"
-              style={{ padding: "8px 16px", fontSize: "0.9rem" }}
-            >
-              <Mail size={15} />
-              <span>Contact</span>
-            </a>
           </div>
         </div>
       </header>
@@ -209,25 +202,6 @@ export default function HomePage() {
                 Teman AI gemas untuk bikin fotomu <strong>2× lebih jernih, tajam &amp; HD</strong>{" "}
                 langsung dari Discord, dilengkapi sistem virtual economy yang manis dan aman!
               </p>
-
-              {/* Action Buttons */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "14px",
-                  flexWrap: "wrap",
-                }}
-              >
-                <a href="#commands" className="btn-primary">
-                  <Sparkles size={18} />
-                  <span>Daftar Perintah Bot</span>
-                </a>
-                <a href="#supported" className="btn-secondary">
-                  <Heart size={16} />
-                  <span>Profil Ayaa</span>
-                </a>
-              </div>
             </div>
           </div>
         </div>
@@ -724,76 +698,27 @@ export default function HomePage() {
               style={{
                 display: "flex",
                 justifyContent: "center",
-                gap: "16px",
-                flexWrap: "wrap",
+                marginTop: "20px",
               }}
             >
-              <div
+              <a
+                href="https://wa.me/6282113285557"
+                target="_blank"
+                rel="noreferrer"
+                className="btn-primary"
                 style={{
-                  background: "white",
-                  padding: "14px 22px",
-                  borderRadius: "18px",
-                  border: "1.5px solid #ffb3c1",
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
                   gap: "12px",
-                  boxShadow: "0 4px 12px rgba(255, 117, 143, 0.08)",
+                  padding: "16px 36px",
+                  fontSize: "1.05rem",
+                  textDecoration: "none",
+                  boxShadow: "0 10px 24px rgba(255, 77, 109, 0.35)",
                 }}
               >
-                <MessageSquare size={22} color="#ff4d6d" />
-                <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: "0.75rem", color: "#a4133c", fontWeight: 700 }}>
-                    DISCORD DEVELOPER
-                  </div>
-                  <div style={{ fontWeight: 800, color: "#590d22" }}>
-                    @didip0644_14058 (KAB - Nadhif)
-                  </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: "white",
-                  padding: "14px 22px",
-                  borderRadius: "18px",
-                  border: "1.5px solid #ffb3c1",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  boxShadow: "0 4px 12px rgba(255, 117, 143, 0.08)",
-                }}
-              >
-                <Home size={22} color="#ff4d6d" />
-                <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: "0.75rem", color: "#a4133c", fontWeight: 700 }}>
-                    DISCORD SERVER
-                  </div>
-                  <div style={{ fontWeight: 800, color: "#590d22" }}>ayaa room</div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  background: "white",
-                  padding: "14px 22px",
-                  borderRadius: "18px",
-                  border: "1.5px solid #ffb3c1",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  boxShadow: "0 4px 12px rgba(255, 117, 143, 0.08)",
-                }}
-              >
-                <Mail size={22} color="#ff4d6d" />
-                <div style={{ textAlign: "left" }}>
-                  <div style={{ fontSize: "0.75rem", color: "#a4133c", fontWeight: 700 }}>
-                    EMAIL SUPPORT
-                  </div>
-                  <div style={{ fontWeight: 800, color: "#590d22" }}>
-                    botayaa3@gmail.com
-                  </div>
-                </div>
-              </div>
+                <MessageCircle size={22} />
+                <span>Hubungi via WhatsApp (0821-1328-5557)</span>
+              </a>
             </div>
           </div>
         </div>
