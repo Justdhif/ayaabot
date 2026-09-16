@@ -270,71 +270,92 @@ export function HomePageClient() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Created By Card */}
-            <Card className="p-7">
-              <Badge variant="pink" className="mb-3">
-                <Code2 className="w-3.5 h-3.5 text-pink-600" />
-                <span>Developer &amp; Author</span>
-              </Badge>
-              <h3 className="text-xl sm:text-2xl font-black text-pink-950 mb-3 flex items-center gap-2">
-                <span>Created by Justdhif</span>
-                <Heart className="w-5 h-5 text-pink-500 fill-pink-400" />
-              </h3>
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed mb-4">
-                Bot ini dirancang dan dikembangkan oleh <strong>Justdhif</strong> dengan arsitektur
-                serverless modern berbasis Next.js, Drizzle ORM, dan Neon PostgreSQL untuk
-                pengalaman image upscaling yang cepat dan aman.
-              </p>
+            <Card className="p-7 flex flex-col justify-between">
               <div>
+                <Badge variant="pink" className="mb-4">
+                  <Code2 className="w-3.5 h-3.5 text-pink-600" />
+                  <span>Developer &amp; Author</span>
+                </Badge>
+
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden border-2 border-pink-400 shadow-md shadow-pink-500/25 shrink-0">
+                    <Image
+                      src="/justdhif.png"
+                      alt="Justdhif Profile"
+                      fill
+                      className="object-cover"
+                      sizes="72px"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-xl font-black text-pink-950">Justdhif</h4>
+                      <BadgeCheck className="w-5 h-5 text-pink-500 fill-pink-100" />
+                    </div>
+                    <div className="text-sm text-pink-700 font-extrabold">
+                      @Justdhif
+                    </div>
+                    <div className="text-xs text-pink-600 font-semibold mt-0.5">
+                      Creator &amp; Developer 💻
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
                 <a
                   href="https://github.com/Justdhif"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 bg-white/90 hover:bg-white text-pink-800 border border-pink-200 hover:border-pink-300 font-bold px-4 py-2 rounded-full text-xs sm:text-sm shadow-xs transition-all hover:-translate-y-0.5"
+                  className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold px-5 py-2.5 rounded-full text-xs sm:text-sm shadow-md transition-all hover:-translate-y-0.5"
                 >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+                    />
+                  </svg>
+                  <span>Kunjungi GitHub @Justdhif</span>
                   <ExternalLink className="w-3.5 h-3.5" />
-                  <span>GitHub @Justdhif</span>
                 </a>
               </div>
             </Card>
 
             {/* Supported By Card: Info Akun Aya */}
-            <Card className="p-7">
-              <Badge variant="pink" className="mb-3">
-                <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-400" />
-                <span>Supported &amp; Inspired By</span>
-              </Badge>
+            <Card className="p-7 flex flex-col justify-between">
+              <div>
+                <Badge variant="pink" className="mb-4">
+                  <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-400" />
+                  <span>Supported &amp; Inspired By</span>
+                </Badge>
 
-              <div className="flex items-center gap-4 my-2">
-                <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden border-2 border-pink-400 shadow-md shadow-pink-500/25 shrink-0">
-                  <Image
-                    src="/avatar.jpeg"
-                    alt="Ayaa Asli Profile"
-                    fill
-                    className="object-cover"
-                    sizes="72px"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="text-xl font-black text-pink-950">Ayaa</h4>
-                    <BadgeCheck className="w-5 h-5 text-pink-500 fill-pink-100" />
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden border-2 border-pink-400 shadow-md shadow-pink-500/25 shrink-0">
+                    <Image
+                      src="/avatar.jpeg"
+                      alt="Ayaa Asli Profile"
+                      fill
+                      className="object-cover"
+                      sizes="72px"
+                    />
                   </div>
-                  <div className="text-sm text-pink-700 font-extrabold">
-                    @acyash_ • Profil Asli
-                  </div>
-                  <div className="text-xs text-pink-600 font-semibold mt-0.5">
-                    Inspiration &amp; Official Muse of Ayaa Bot 🌸
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-xl font-black text-pink-950">Ayaa</h4>
+                      <BadgeCheck className="w-5 h-5 text-pink-500 fill-pink-100" />
+                    </div>
+                    <div className="text-sm text-pink-700 font-extrabold">
+                      @acyash_
+                    </div>
+                    <div className="text-xs text-pink-600 font-semibold mt-0.5">
+                      My Love 🌸
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed mt-3 mb-4">
-                Didedikasikan dan didukung penuh oleh <strong>Ayaa asli (@acyash_)</strong> sebagai
-                sosok inspirasi utama di balik hadirnya Ayaa Bot di server <strong>ayaa room</strong>.
-                Menemani harimu bikin foto jadi makin manis dan tajam! 💕
-              </p>
-
-              <div>
+              <div className="mt-6">
                 <a
                   href="https://www.tiktok.com/@acyash_?_r=1&_t=ZS-99lvQg26geC"
                   target="_blank"
