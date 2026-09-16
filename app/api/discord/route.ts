@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyKey } from "discord-interactions";
 import { waitUntil } from "@vercel/functions";
-import { getUserByDiscordId } from "@/services/economy.service";
+import { getUserByDiscordId, getUserRecentTransactions } from "@/services/economy.service";
 import { handleHelpCommand } from "@/commands/help";
 import { handleBalanceCommand } from "@/commands/balance";
 import { handleClaimCommand } from "@/commands/claim";
 import { handleHdCommand } from "@/commands/hd";
 import { handleFilterCommand } from "@/commands/filter";
 import { handleConvertCommand } from "@/commands/convert";
+import { BOT_THEME } from "@/config/constants";
 
 export const maxDuration = 60; // Allow up to 60s execution for image processing
 
@@ -233,6 +234,95 @@ export async function POST(req: NextRequest) {
         });
       }
     }
+  }
+
+  // 4. Handle Message Component Interactions (Buttons, Type 3)
+  if (interaction.type === 3) {
+    const discordUserId = interaction.member?.user?.id || interaction.user?.id;
+    const customId = interaction.data?.custom_id || "";
+
+    if (!discordUserId) {
+      return NextResponse.json({
+        type: 4,
+        data: { content: "❌ Unable to identify Discord user.", flags: 64 },
+      });
+    }
+
+    const user = await getUserByDiscordId(discordUserId);
+    if (!user) {
+      return NextResponse.json({
+        type: 4,
+        data: {
+          embeds: [
+            {
+              title: "🔒 Akses Terbatas yaa~ 🌸",
+              color: 0xff758f,
+              description:
+                "Maaf yaa manis, tombol ini hanya bisa digunakan oleh teman-teman yang sudah terdaftar di whitelist~ 🥺💕",
+            },
+          ],
+          flags: 64,
+        },
+      });
+    }
+
+    const [action] = customId.split(":");
+
+    // Button 1: Claim Daily Reward
+    if (action === "btn_claim") {
+      const claimResult = await handleClaimCommand(discordUserId);
+      return NextResponse.json(claimResult);
+    }
+
+    // Button 2: View Recent Transactions
+    if (action === "btn_history") {
+      const txs = await getUserRecentTransactions(user.id, 5);
+
+      const historyText =
+        txs.length > 0
+          ? txs
+              .map((t) => {
+                const moneyStr =
+                  t.moneyChange > 0 ? `+${t.moneyChange}` : `${t.moneyChange}`;
+                const limitStr =
+                  t.limitChange !== 0
+                    ? ` (${t.limitChange > 0 ? `+${t.limitChange}` : t.limitChange} 🎟️)`
+                    : "";
+                const dateStr = new Date(t.createdAt).toLocaleDateString("id-ID", {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                return `• **[${t.type}]** \`${moneyStr} 💰${limitStr}\` — *${t.description || "-"}* (\`${dateStr}\`)`;
+              })
+              .join("\n")
+          : "Belum ada riwayat transaksi yang tercatat.";
+
+      return NextResponse.json({
+        type: 4,
+        data: {
+          flags: 64, // Ephemeral: only visible to the user who clicked
+          embeds: [
+            {
+              title: "📜 Riwayat Transaksi Terakhir Kamu — Ayaa Bot 🌸",
+              color: BOT_THEME.COLOR_PINK,
+              description:
+                `Halo **${user.username || "Manis"}**! Ini dia 5 transaksi terakhir kamu:\n\n` +
+                historyText,
+              footer: {
+                text: `Ayaa Bot 🌸 • Saldo saat ini: ${user.money.toLocaleString("id-ID")} Money • ${user.limitCount} Limit`,
+              },
+            },
+          ],
+        },
+      });
+    }
+
+    return NextResponse.json({
+      type: 4,
+      data: { content: "❌ Unknown button interaction.", flags: 64 },
+    });
   }
 
   return NextResponse.json({ error: "Unsupported interaction type" }, { status: 400 });

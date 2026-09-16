@@ -44,6 +44,28 @@ export function handleBalanceCommand(user: User) {
           },
         },
       ],
+      components: [
+        {
+          type: 1, // Action Row
+          components: [
+            {
+              type: 2, // Button
+              style: cooldown.canExecute ? 3 : 2, // 3: Success (Green), 2: Secondary (Grey)
+              label: cooldown.canExecute ? "Ambil Daily Claim" : "Claim Cooldown",
+              emoji: { name: cooldown.canExecute ? "🎁" : "⏳" },
+              custom_id: `btn_claim:${user.discordId}`,
+              disabled: !cooldown.canExecute,
+            },
+            {
+              type: 2, // Button
+              style: 2, // Secondary (Grey)
+              label: "Riwayat Transaksi",
+              emoji: { name: "📜" },
+              custom_id: `btn_history:${user.discordId}`,
+            },
+          ],
+        },
+      ],
     },
   };
 }

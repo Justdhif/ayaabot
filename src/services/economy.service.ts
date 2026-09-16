@@ -1,6 +1,6 @@
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc, or, isNull, lte } from "drizzle-orm";
 import { db } from "../db";
-import { users, transactions, User } from "../db/schema";
+import { users, transactions, User, Transaction } from "../db/schema";
 import { ECONOMY } from "../config/constants";
 import { checkClaimCooldown } from "./ratelimit.service";
 
@@ -231,4 +231,24 @@ export async function deductForConvert(userId: string, targetFormat: string): Pr
     success: true,
     user: updatedUser,
   };
+}
+
+export async function getUserRecentTransactions(
+  userId: string,
+  limit: number = 5
+): Promise<Transaction[]> {
+  return await db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.userId, userId))
+    .orderBy(desc(transactions.createdAt))
+    .limit(limit);
+}
+
+export async function getUsersReadyForClaim(): Promise<User[]> {
+  const threshold = new Date(Date.now() - ECONOMY.CLAIM_COOLDOWN_HOURS * 60 * 60 * 1000);
+  return await db
+    .select()
+    .from(users)
+    .where(or(isNull(users.lastClaimAt), lte(users.lastClaimAt, threshold)));
 }
