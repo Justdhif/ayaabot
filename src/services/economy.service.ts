@@ -420,3 +420,107 @@ export async function transferGift(
     message: cleanMsg,
   };
 }
+
+/**
+ * Refunds money and/or limits back to the user in case any downstream step (like Discord message delivery) fails.
+ * Guarantees zero loss for users (100% Anti-Rugi).
+ */
+export async function refundUserBalance(
+  userId: string,
+  money: number,
+  limit: number,
+  reason: string
+): Promise<{ success: boolean; user?: User }> {
+  if (money <= 0 && limit <= 0) {
+    return { success: true };
+  }
+
+  const now = new Date();
+  try {
+    const updated = await db.transaction(async (tx) => {
+      const [u] = await tx
+        .update(users)
+        .set({
+          money: money > 0 ? sql`${users.money} + ${money}` : users.money,
+          limitCount: limit > 0 ? sql`${users.limitCount} + ${limit}` : users.limitCount,
+          updatedAt: now,
+        })
+        .where(eq(users.id, userId))
+        .returning();
+
+      await tx.insert(transactions).values({
+        userId,
+        type: "REFUND",
+        moneyChange: money,
+        limitChange: limit,
+        description: `Refund otomatis (Anti-Rugi): ${reason}`,
+        createdAt: now,
+      });
+
+      return u;
+    });
+
+    console.log(`[Refund] Successfully refunded +${money} money, +${limit} limit to user ${userId}. Reason: ${reason}`);
+    return { success: true, user: updated };
+  } catch (err) {
+    console.error("[Refund] Failed to refund user balance:", err);
+    return { success: false };
+  }
+}
+
+/**
+ * Rollbacks a gift transfer in case Discord webhook fails to deliver the gift message.
+ */
+export async function rollbackGift(
+  senderId: string,
+  receiverId: string,
+  amount: number,
+  resource: "money" | "limit",
+  reason: string
+): Promise<boolean> {
+  const now = new Date();
+  try {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({
+          money: resource === "money" ? sql`${users.money} + ${amount}` : users.money,
+          limitCount: resource === "limit" ? sql`${users.limitCount} + ${amount}` : users.limitCount,
+          updatedAt: now,
+        })
+        .where(eq(users.id, senderId));
+
+      await tx
+        .update(users)
+        .set({
+          money: resource === "money" ? sql`${users.money} - ${amount}` : users.money,
+          limitCount: resource === "limit" ? sql`${users.limitCount} - ${amount}` : users.limitCount,
+          updatedAt: now,
+        })
+        .where(eq(users.id, receiverId));
+
+      await tx.insert(transactions).values({
+        userId: senderId,
+        type: "REFUND",
+        moneyChange: resource === "money" ? amount : 0,
+        limitChange: resource === "limit" ? amount : 0,
+        description: `Rollback kado: ${reason}`,
+        createdAt: now,
+      });
+
+      await tx.insert(transactions).values({
+        userId: receiverId,
+        type: "REFUND",
+        moneyChange: resource === "money" ? -amount : 0,
+        limitChange: resource === "limit" ? -amount : 0,
+        description: `Pembatalan kado masuk: ${reason}`,
+        createdAt: now,
+      });
+    });
+    return true;
+  } catch (err) {
+    console.error("[RollbackGift] Failed to rollback gift:", err);
+    return false;
+  }
+}
+

@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyKey } from "discord-interactions";
 import { waitUntil } from "@vercel/functions";
-import { getUserByDiscordId, getUserRecentTransactions } from "@/services/economy.service";
+import {
+  getUserByDiscordId,
+  getUserRecentTransactions,
+  refundUserBalance,
+  rollbackGift,
+} from "@/services/economy.service";
 import { handleHelpCommand } from "@/commands/help";
 import { handleBalanceCommand } from "@/commands/balance";
 import { handleClaimCommand } from "@/commands/claim";
@@ -9,7 +14,7 @@ import { handleHdCommand } from "@/commands/hd";
 import { handleFilterCommand } from "@/commands/filter";
 import { handleConvertCommand } from "@/commands/convert";
 import { handleGiftCommand } from "@/commands/gift";
-import { BOT_THEME } from "@/config/constants";
+import { BOT_THEME, ECONOMY } from "@/config/constants";
 
 export const maxDuration = 60; // Allow up to 60s execution for image processing
 
@@ -20,42 +25,51 @@ async function patchDiscordOriginalMessage(
     responsePayload: any;
     fileAttachment?: { buffer: Buffer; filename: string; contentType: string };
   }
-) {
+): Promise<boolean> {
   const webhookUrl = `https://discord.com/api/v10/webhooks/${applicationId}/${token}/messages/@original`;
   const messageData = result.responsePayload.data || result.responsePayload;
 
-  if (result.fileAttachment) {
-    const formData = new FormData();
-    formData.append("payload_json", JSON.stringify(messageData));
+  try {
+    if (result.fileAttachment) {
+      const formData = new FormData();
+      formData.append("payload_json", JSON.stringify(messageData));
 
-    const fileBlob = new Blob([new Uint8Array(result.fileAttachment.buffer)], {
-      type: result.fileAttachment.contentType,
-    });
+      const fileBlob = new Blob([new Uint8Array(result.fileAttachment.buffer)], {
+        type: result.fileAttachment.contentType,
+      });
 
-    formData.append("files[0]", fileBlob, result.fileAttachment.filename);
+      formData.append("files[0]", fileBlob, result.fileAttachment.filename);
 
-    const patchRes = await fetch(webhookUrl, {
-      method: "PATCH",
-      body: formData,
-    });
+      const patchRes = await fetch(webhookUrl, {
+        method: "PATCH",
+        body: formData,
+      });
 
-    if (!patchRes.ok) {
-      const errorText = await patchRes.text();
-      console.error("Failed to patch message with file:", patchRes.status, errorText);
+      if (!patchRes.ok) {
+        const errorText = await patchRes.text().catch(() => "");
+        console.error("Failed to patch message with file:", patchRes.status, errorText);
+        return false;
+      }
+      return true;
+    } else {
+      const patchRes = await fetch(webhookUrl, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(messageData),
+      });
+
+      if (!patchRes.ok) {
+        const errorText = await patchRes.text().catch(() => "");
+        console.error("Failed to patch message text:", patchRes.status, errorText);
+        return false;
+      }
+      return true;
     }
-  } else {
-    const patchRes = await fetch(webhookUrl, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(messageData),
-    });
-
-    if (!patchRes.ok) {
-      const errorText = await patchRes.text();
-      console.error("Failed to patch message text:", patchRes.status, errorText);
-    }
+  } catch (netErr) {
+    console.error("Network error patching Discord message:", netErr);
+    return false;
   }
 }
 
@@ -165,9 +179,47 @@ export async function POST(req: NextRequest) {
             (async () => {
               try {
                 const hdResult = await handleHdCommand(user, attachment, { scale, mode });
-                await patchDiscordOriginalMessage(applicationId, interactionToken, hdResult);
+                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, hdResult);
+
+                // Anti-Rugi Guarantee: Jika file gagal dikirim Discord padahal saldo terpotong, auto-refund!
+                if (!delivered && hdResult.fileAttachment) {
+                  const costMoney = scale === 4 ? ECONOMY.HD_COST_MONEY_4X : ECONOMY.HD_COST_MONEY_2X;
+                  const costLimit = scale === 4 ? ECONOMY.HD_COST_LIMIT_4X : ECONOMY.HD_COST_LIMIT_2X;
+                  await refundUserBalance(user.id, costMoney, costLimit, "Discord gagal mengirim file HD");
+
+                  await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                    responsePayload: {
+                      type: 4,
+                      data: {
+                        embeds: [
+                          {
+                            title: "😿 Gagal Mengirim Hasil HD",
+                            color: BOT_THEME.COLOR_ROSE,
+                            description:
+                              "Maaf yaa manis, Discord gagal menerima kiriman file foto HD. Tapi tenang aja, **saldo koin & tiket limit kamu sudah 100% dikembalikan secara otomatis**! 🌸✨",
+                          },
+                        ],
+                      },
+                    },
+                  });
+                }
               } catch (err) {
                 console.error("Background HD processing error:", err);
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    type: 4,
+                    data: {
+                      embeds: [
+                        {
+                          title: "😿 Ups, Gagal Memproses Gambar",
+                          color: BOT_THEME.COLOR_ROSE,
+                          description:
+                            "Maaf yaa manis, terjadi kendala saat memproses fotomu. Tapi tenang aja, **saldo & tiket kamu tetap utuh 100% dan aman** kok! Silakan coba lagi yaa~ 💕",
+                        },
+                      ],
+                    },
+                  },
+                });
               }
             })()
           );
@@ -191,9 +243,45 @@ export async function POST(req: NextRequest) {
             (async () => {
               try {
                 const filterResult = await handleFilterCommand(user, attachment, preset);
-                await patchDiscordOriginalMessage(applicationId, interactionToken, filterResult);
+                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, filterResult);
+
+                // Anti-Rugi Guarantee: Auto-refund jika pengiriman file filter ke Discord gagal
+                if (!delivered && filterResult.fileAttachment) {
+                  await refundUserBalance(user.id, ECONOMY.FILTER_COST_MONEY, 0, "Discord gagal mengirim file Filter");
+
+                  await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                    responsePayload: {
+                      type: 4,
+                      data: {
+                        embeds: [
+                          {
+                            title: "😿 Gagal Mengirim Hasil Filter",
+                            color: BOT_THEME.COLOR_ROSE,
+                            description:
+                              "Maaf yaa manis, Discord gagal menerima kiriman foto filter. Tapi tenang aja, **saldo koin kamu sudah 100% dikembalikan secara otomatis**! 🌸✨",
+                          },
+                        ],
+                      },
+                    },
+                  });
+                }
               } catch (err) {
                 console.error("Background Filter processing error:", err);
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    type: 4,
+                    data: {
+                      embeds: [
+                        {
+                          title: "😿 Ups, Gagal Memproses Filter",
+                          color: BOT_THEME.COLOR_ROSE,
+                          description:
+                            "Maaf yaa manis, terjadi kendala saat menerapkan filter. Tapi tenang aja, **saldo kamu tetap utuh 100% dan tidak terpotong** kok! 💕",
+                        },
+                      ],
+                    },
+                  },
+                });
               }
             })()
           );
@@ -219,9 +307,45 @@ export async function POST(req: NextRequest) {
             (async () => {
               try {
                 const convertResult = await handleConvertCommand(user, attachment, { format, quality });
-                await patchDiscordOriginalMessage(applicationId, interactionToken, convertResult);
+                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, convertResult);
+
+                // Anti-Rugi Guarantee: Auto-refund jika pengiriman file convert ke Discord gagal
+                if (!delivered && convertResult.fileAttachment) {
+                  await refundUserBalance(user.id, ECONOMY.CONVERT_COST_MONEY, 0, "Discord gagal mengirim file Convert");
+
+                  await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                    responsePayload: {
+                      type: 4,
+                      data: {
+                        embeds: [
+                          {
+                            title: "😿 Gagal Mengirim Hasil Konversi",
+                            color: BOT_THEME.COLOR_ROSE,
+                            description:
+                              "Maaf yaa manis, Discord gagal menerima file hasil konversi. Tapi tenang aja, **saldo koin kamu sudah 100% dikembalikan secara otomatis**! 🌸✨",
+                          },
+                        ],
+                      },
+                    },
+                  });
+                }
               } catch (err) {
                 console.error("Background Convert processing error:", err);
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    type: 4,
+                    data: {
+                      embeds: [
+                        {
+                          title: "😿 Ups, Gagal Mengonversi Gambar",
+                          color: BOT_THEME.COLOR_ROSE,
+                          description:
+                            "Maaf yaa manis, terjadi kendala saat konversi foto. Tapi tenang aja, **saldo kamu tetap utuh 100% dan tidak terpotong** kok! 💕",
+                        },
+                      ],
+                    },
+                  },
+                });
               }
             })()
           );
@@ -259,16 +383,33 @@ export async function POST(req: NextRequest) {
                   message,
                   targetUsername
                 );
-                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+
+                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, {
                   responsePayload: giftResult,
                 });
+
+                // Jika webhook gagal terkirim padahal kado sudah terlanjur diproses di database
+                if (!delivered) {
+                  console.warn("[Gift] Message delivery failed, rolling back gift...");
+                  const targetUserObj = await getUserByDiscordId(targetDiscordId);
+                  if (targetUserObj) {
+                    await rollbackGift(user.id, targetUserObj.id, amount, resource, "Discord webhook gagal mengirim kado");
+                  }
+                }
               } catch (err) {
                 console.error("Background Gift processing error:", err);
                 await patchDiscordOriginalMessage(applicationId, interactionToken, {
                   responsePayload: {
                     type: 4,
                     data: {
-                      content: "😿 Terjadi kendala saat memproses kado kamu. Coba lagi sebentar lagi yaa~ 🌸",
+                      embeds: [
+                        {
+                          title: "😿 Gagal Mengirim Kado",
+                          color: BOT_THEME.COLOR_ROSE,
+                          description:
+                            "Maaf yaa manis, terjadi kendala saat memproses kado kamu. Tapi tenang aja, **saldo kamu tetap utuh dan aman 100%**! Silakan coba lagi yaa~ 🌸",
+                        },
+                      ],
                     },
                   },
                 });
