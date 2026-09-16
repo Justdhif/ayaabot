@@ -1,36 +1,43 @@
+import { BOT_THEME } from "../config/constants";
+
 export function handleHelpCommand() {
   return {
-    type: 4, // InteractionResponseType.ChannelMessageWithSource
+    type: 4, // ChannelMessageWithSource
     data: {
       embeds: [
         {
-          title: "🤖 CuanHD Help",
-          color: 0x5865f2,
-          description: "Private AI Image Upscaling & Economy Bot",
+          title: "🌸 Halo! Aku Ayaa Bot~ 🎀",
+          color: BOT_THEME.COLOR_PINK,
+          description:
+            "✨ *Bikin fotomu makin jernih, tajam & gemas setiap hari!* ✨\n\n" +
+            "Yuk intip perintah-perintah yang bisa kamu gunakan di bawah ini yaa: 💕\n",
           fields: [
             {
               name: "🎁 `/claim`",
-              value: "Get your daily reward (+1,000 Money & +5 Limit).\nCooldown: 24 hours.",
+              value: "Ambil uang jajan harian kamu (**+1,000 Money** & **+5 Limit**) 🌸\n*Bisa di-claim setiap 24 jam sekali yaa~*",
               inline: false,
             },
             {
-              name: "💰 `/balance`",
-              value: "Check your current Money, Limit, and daily claim availability.",
+              name: "👛 `/balance`",
+              value: "Cek isi dompet & sisa tiket limit kamu 🎀",
               inline: false,
             },
             {
               name: "🖼️ `/hd [image]`",
-              value: "Upscale an image (2× scale).\nCost: 100 Money + 1 Limit.\nCooldown: 15 seconds.",
+              value: "Kirim foto kamu dan aku sulap jadi 2× lebih jernih & HD! ✨\n*Biaya: 100 Money + 1 Limit (Cooldown 15 detik)*",
               inline: false,
             },
             {
-              name: "ℹ️ `/help`",
-              value: "Show this help menu.",
+              name: "📖 `/help`",
+              value: "Tampilkan kembali menu panduan imut ini~ 🐾",
               inline: false,
             },
           ],
+          image: {
+            url: BOT_THEME.BANNER_URL,
+          },
           footer: {
-            text: "CuanHD v1.0.0 (MVP)",
+            text: "Ayaa Bot 🌸 • Made with lots of love 💕",
           },
         },
       ],

@@ -15,3 +15,11 @@ export const IMAGE_CONFIG = {
   ALLOWED_EXTENSIONS: ["png", "jpg", "jpeg", "webp"],
   DEFAULT_SCALE: 2,
 } as const;
+
+export const BOT_THEME = {
+  NAME: "Ayaa Bot",
+  COLOR_PINK: 0xFFA6C9, // Cute Soft Pastel Pink
+  COLOR_GOLD: 0xFFD166,
+  COLOR_ROSE: 0xFF758F,
+  BANNER_URL: "https://ayaabot.vercel.app/banner.png",
+} as const;

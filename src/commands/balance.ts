@@ -1,31 +1,33 @@
 import { User } from "../db/schema";
 import { checkClaimCooldown } from "../services/ratelimit.service";
+import { BOT_THEME } from "../config/constants";
 
 export function handleBalanceCommand(user: User) {
   const cooldown = checkClaimCooldown(user.lastClaimAt);
   const claimStatus = cooldown.canExecute
-    ? "Available"
-    : `In ${cooldown.formattedRemaining}`;
+    ? "✨ Siap Diambil!"
+    : `⏳ ${cooldown.formattedRemaining} lagi`;
 
-  const moneyFormatted = user.money.toLocaleString("en-US");
-  const limitFormatted = user.limitCount.toLocaleString("en-US");
+  const moneyFormatted = user.money.toLocaleString("id-ID");
+  const limitFormatted = user.limitCount.toLocaleString("id-ID");
 
   return {
-    type: 4, // InteractionResponseType.ChannelMessageWithSource
+    type: 4, // ChannelMessageWithSource
     data: {
       embeds: [
         {
-          title: "💎 CuanHD Balance",
-          color: 0x00d26a,
+          title: "👛 Dompet Cantik Kamu — Ayaa Bot 🌸",
+          color: BOT_THEME.COLOR_PINK,
+          description: "Ini dia status saldo dan tiket jatah upscaling kamu saat ini yaa~ 💕",
           fields: [
             {
-              name: "💰 Money",
-              value: `**${moneyFormatted}**`,
+              name: "💰 Uang Jajan",
+              value: `**${moneyFormatted} Money**`,
               inline: true,
             },
             {
-              name: "🎟️ Limit",
-              value: `**${limitFormatted}**`,
+              name: "🎟️ Tiket Limit",
+              value: `**${limitFormatted} Limit**`,
               inline: true,
             },
             {
@@ -34,8 +36,11 @@ export function handleBalanceCommand(user: User) {
               inline: true,
             },
           ],
+          image: {
+            url: BOT_THEME.BANNER_URL,
+          },
           footer: {
-            text: `User ID: ${user.discordId}`,
+            text: `Ayaa Bot 🌸 • User: ${user.username || user.discordId}`,
           },
         },
       ],

@@ -1,4 +1,5 @@
 import { claimDailyReward } from "../services/economy.service";
+import { BOT_THEME } from "../config/constants";
 
 export async function handleClaimCommand(discordId: string) {
   const result = await claimDailyReward(discordId);
@@ -10,9 +11,19 @@ export async function handleClaimCommand(discordId: string) {
         data: {
           embeds: [
             {
-              title: "⏳ Daily Reward Already Claimed",
-              color: 0xf1c40f,
-              description: `You can claim again in:\n\n**${result.remainingCooldown}**`,
+              title: "⏳ Eits, Sabar Dulu Yaa Manis~ 🌸",
+              color: BOT_THEME.COLOR_ROSE,
+              description:
+                "Kamu udah ambil jatah hadiah hari ini nih~ 🥺💕\n\n" +
+                "Hadiah berikutnya bisa kamu claim lagi dalam:\n" +
+                `⏰ **${result.remainingCooldown}**\n\n` +
+                "*Tunggu cooldown selesai yaa, nanti Ayaa siapin hadiah baru buat kamu! 🎀*",
+              image: {
+                url: BOT_THEME.BANNER_URL,
+              },
+              footer: {
+                text: "Ayaa Bot 🌸 • Daily Reward Cooldown",
+              },
             },
           ],
         },
@@ -22,7 +33,13 @@ export async function handleClaimCommand(discordId: string) {
     return {
       type: 4,
       data: {
-        content: "❌ Failed to claim daily reward. Please try again later.",
+        embeds: [
+          {
+            title: "😿 Ups, Gagal Mengambil Hadiah",
+            color: BOT_THEME.COLOR_ROSE,
+            description: "Ayaa gagal memproses claim kamu nih, coba sebentar lagi yaa~ 🥺",
+          },
+        ],
       },
     };
   }
@@ -33,13 +50,22 @@ export async function handleClaimCommand(discordId: string) {
     data: {
       embeds: [
         {
-          title: "🎁 Daily Reward Claimed!",
-          color: 0x2ecc71,
-          description: "💰 **+1,000 Money**\n🎟️ **+5 Limit**\n\n**Your Balance:**\n💰 Money: **" +
-            user.money.toLocaleString("en-US") +
-            "**\n🎟️ Limit: **" +
-            user.limitCount.toLocaleString("en-US") +
-            "**\n\n*Come back tomorrow for another reward.*",
+          title: "🎀 Yeay! Hadiah Harian Berhasil Diambil! 🌸",
+          color: BOT_THEME.COLOR_PINK,
+          description:
+            "Asiiik, uang jajan harian kamu udah masuk ke dompet nih~ ✨\n\n" +
+            "💰 **+1,000 Money**\n" +
+            "🎟️ **+5 Limit HD**\n\n" +
+            "**Isi Dompet Kamu Sekarang:**\n" +
+            `💰 Saldo Money: **${user.money.toLocaleString("id-ID")}**\n` +
+            `🎟️ Tiket Limit: **${user.limitCount.toLocaleString("id-ID")}**\n\n` +
+            "*Jangan lupa kembali lagi besok yaa buat ambil jatah berikutnya~ 🧸💕*",
+          image: {
+            url: BOT_THEME.BANNER_URL,
+          },
+          footer: {
+            text: "Ayaa Bot 🌸 • Selamat berkreasi!",
+          },
         },
       ],
     },

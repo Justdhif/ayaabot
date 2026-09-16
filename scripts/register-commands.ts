@@ -4,19 +4,19 @@ dotenv.config({ path: ".env.local" });
 const commands = [
   {
     name: "claim",
-    description: "Get your daily reward (+1,000 Money and +5 Limit)",
+    description: "Ambil uang jajan harian kamu (+1.000 Money & +5 Limit) 🌸",
   },
   {
     name: "balance",
-    description: "Check your current Money and Limit balance",
+    description: "Cek isi dompet & sisa tiket limit kamu 🎀",
   },
   {
     name: "hd",
-    description: "Upscale an image to 2x resolution (costs 100 Money + 1 Limit)",
+    description: "Sulap fotomu jadi 2x lebih jernih & HD (biaya: 100 Money + 1 Limit) ✨",
     options: [
       {
         name: "image",
-        description: "The image to upscale (PNG, JPG, JPEG, WEBP, max 10 MB)",
+        description: "Foto yang mau disulap (PNG, JPG, JPEG, WEBP, maks 10 MB)",
         type: 11, // ATTACHMENT type in Discord API
         required: true,
       },
@@ -24,7 +24,7 @@ const commands = [
   },
   {
     name: "help",
-    description: "Show list of available commands and bot instructions",
+    description: "Tampilkan menu panduan imut Ayaa Bot~ 🐾",
   },
 ];
 
@@ -38,8 +38,6 @@ async function main() {
     process.exit(1);
   }
 
-  // If GUILD_ID is provided, register for that specific guild (instant update).
-  // Otherwise, register globally (takes up to an hour to propagate).
   const url = guildId
     ? `https://discord.com/api/v10/applications/${clientId}/guilds/${guildId}/commands`
     : `https://discord.com/api/v10/applications/${clientId}/commands`;
@@ -62,7 +60,7 @@ async function main() {
   }
 
   const result = await response.json();
-  console.log(`✅ Successfully registered ${result.length} commands:`);
+  console.log(`✅ Successfully updated ${result.length} commands with cute descriptions:`);
   for (const cmd of result) {
     console.log(`   - /${cmd.name} (id: ${cmd.id})`);
   }

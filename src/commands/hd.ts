@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { usageLogs, User } from "../db/schema";
-import { ECONOMY } from "../config/constants";
+import { ECONOMY, BOT_THEME } from "../config/constants";
 import { checkHdCooldown } from "../services/ratelimit.service";
 import { validateAndExtractImage } from "../services/image.service";
 import { upscaleImage } from "../services/upscaler.service";
@@ -37,7 +37,13 @@ export async function handleHdCommand(
       responsePayload: {
         type: 4,
         data: {
-          content: `⏳ Please wait ${cooldown.formattedRemaining} before using /hd again.`,
+          embeds: [
+            {
+              title: "⏳ Jangan Buru-buru Yaa Manis~ 🌸",
+              color: BOT_THEME.COLOR_ROSE,
+              description: `Tunggu **${cooldown.formattedRemaining}** lagi yaa sebelum menyulap foto berikutnya~ 🎀✨`,
+            },
+          ],
         },
       },
     };
@@ -49,7 +55,15 @@ export async function handleHdCommand(
       responsePayload: {
         type: 4,
         data: {
-          content: `💰 **Insufficient Money.**\n\nRequired: ${ECONOMY.HD_COST_MONEY}\nYour balance: ${user.money}`,
+          embeds: [
+            {
+              title: "👛 Uang Jajan Kamu Belum Cukup Nih~ 🥺",
+              color: BOT_THEME.COLOR_ROSE,
+              description:
+                `Untuk menyulap foto jadi HD butuh **${ECONOMY.HD_COST_MONEY} Money**, tapi saldo kamu saat ini baru **${user.money.toLocaleString("id-ID")}**.\n\n` +
+                "Yuk ambil uang jajan dulu pakai perintah **`/claim`** yaa! 🎀💕",
+            },
+          ],
         },
       },
     };
@@ -60,7 +74,15 @@ export async function handleHdCommand(
       responsePayload: {
         type: 4,
         data: {
-          content: `🎟️ **Insufficient Limit.**\n\nRequired: ${ECONOMY.HD_COST_LIMIT}\nYour limit: ${user.limitCount}\n\nUse \`/claim\` to get more.`,
+          embeds: [
+            {
+              title: "🎟️ Tiket Limit Kamu Sudah Habis~ 🥺",
+              color: BOT_THEME.COLOR_ROSE,
+              description:
+                `Untuk proses HD butuh **${ECONOMY.HD_COST_LIMIT} Limit**, tapi sisa tiket kamu sekarang **0**.\n\n` +
+                "Yuk ambil jatah tiket harian pakai perintah **`/claim`** yaa manis~ 💕",
+            },
+          ],
         },
       },
     };
@@ -72,7 +94,13 @@ export async function handleHdCommand(
       responsePayload: {
         type: 4,
         data: {
-          content: "❌ Please provide an image to upscale using the `image` parameter.",
+          embeds: [
+            {
+              title: "🌸 Mana Fotonya Manis? 📷",
+              color: BOT_THEME.COLOR_ROSE,
+              description: "Jangan lupa lampirkan foto yang mau kamu sulap di kolom `image` yaa~ 🎀",
+            },
+          ],
         },
       },
     };
@@ -90,7 +118,15 @@ export async function handleHdCommand(
       responsePayload: {
         type: 4,
         data: {
-          content: `❌ ${validation.error || "Please upload a valid image."}\n\nSupported formats: PNG, JPG, JPEG, WEBP. Max size: 10 MB.`,
+          embeds: [
+            {
+              title: "🌸 Format Fotonya Belum Pas Nih~ 🥺",
+              color: BOT_THEME.COLOR_ROSE,
+              description:
+                `${validation.error || "Pastikan file yang kamu upload adalah gambar yang valid yaa."}\n\n` +
+                "**Format yang didukung:** PNG, JPG, JPEG, WEBP (Maksimal 10 MB) 🧸",
+            },
+          ],
         },
       },
     };
@@ -122,8 +158,14 @@ export async function handleHdCommand(
       responsePayload: {
         type: 4,
         data: {
-          content:
-            "❌ Failed to upscale your image.\n\nYour resources were not deducted. Please try again later.",
+          embeds: [
+            {
+              title: "😿 Ups, Gagal Memproses Gambar",
+              color: BOT_THEME.COLOR_ROSE,
+              description:
+                "Maaf yaa manis, gambarmu gagal di-upscale tadi. Tapi tenang aja, **saldo & tiket kamu tetap utuh dan aman** kok! Silakan coba lagi yaa~ 💕",
+            },
+          ],
         },
       },
     };
@@ -136,7 +178,13 @@ export async function handleHdCommand(
       responsePayload: {
         type: 4,
         data: {
-          content: "❌ Failed to process transaction. Your resources were not deducted.",
+          embeds: [
+            {
+              title: "😿 Terjadi Kesalahan Transaksi",
+              color: BOT_THEME.COLOR_ROSE,
+              description: "Gagal memotong saldo. Saldo kamu tidak berkurang, coba lagi yaa manis~ 🥺",
+            },
+          ],
         },
       },
     };
@@ -157,8 +205,7 @@ export async function handleHdCommand(
     processingTimeMs: upscaleResult.processingTimeMs,
   });
 
-  // Prepare result output
-  const outputFilename = `cuanhd_2x_${attachment.filename || "upscaled.png"}`;
+  const outputFilename = `ayaabot_2x_${attachment.filename || "upscaled.png"}`;
 
   return {
     responsePayload: {
@@ -166,18 +213,21 @@ export async function handleHdCommand(
       data: {
         embeds: [
           {
-            title: "✨ Image Upscaled Successfully!",
-            color: 0x5865f2,
-            description: `**Original:** ${validation.width}x${validation.height}\n` +
-              `**Output (2×):** ${upscaleResult.outputWidth}x${upscaleResult.outputHeight}\n` +
-              `**Processing Time:** ${(upscaleResult.processingTimeMs / 1000).toFixed(2)}s\n\n` +
-              `**Balance Remaining:**\n💰 Money: **${updatedUser.money.toLocaleString("en-US")}** (-100)\n` +
-              `🎟️ Limit: **${updatedUser.limitCount.toLocaleString("en-US")}** (-1)`,
+            title: "✨ Tadaa! Fotonya Udah Disulap Jadi Makin HD~ 🌸",
+            color: BOT_THEME.COLOR_PINK,
+            description:
+              "Yeay! Gambarmu udah Ayaa bikin jadi **2× lebih jernih dan tajam** lhoo! Gemas banget kan hasilnya~ 💖\n\n" +
+              `📐 **Resolusi Awal:** \`${validation.width} × ${validation.height} px\`\n` +
+              `✨ **Resolusi HD (2×):** \`${upscaleResult.outputWidth} × ${upscaleResult.outputHeight} px\`\n` +
+              `⚡ **Waktu Sulap:** \`${(upscaleResult.processingTimeMs / 1000).toFixed(2)} detik\`\n\n` +
+              "**Sisa Saldo Kamu:**\n" +
+              `💰 Uang Jajan: **${updatedUser.money.toLocaleString("id-ID")} Money** (-100)\n` +
+              `🎟️ Tiket Limit: **${updatedUser.limitCount.toLocaleString("id-ID")} Tiket** (-1)`,
             image: {
               url: `attachment://${outputFilename}`,
             },
             footer: {
-              text: "CuanHD Image Upscaler",
+              text: "Ayaa Bot 🌸 • AI Image Upscaler Gemas",
             },
           },
         ],

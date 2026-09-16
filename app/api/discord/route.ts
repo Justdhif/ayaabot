@@ -66,8 +66,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         type: 4,
         data: {
-          content: "🔒 **Access Denied**\n\nYou are not authorized to use CuanHD.",
-          flags: 64, // Ephemeral (visible only to user)
+          embeds: [
+            {
+              title: "🔒 Akses Terbatas yaa~ 🌸",
+              color: 0xFF758F,
+              description:
+                "Maaf yaa manis, Ayaa Bot saat ini berstatus **Private Bot** dan hanya bisa digunakan oleh teman-teman yang sudah terdaftar di whitelist~ 🥺💕",
+            },
+          ],
+          flags: 64, // Ephemeral (hanya terlihat oleh user)
         },
       });
     }
