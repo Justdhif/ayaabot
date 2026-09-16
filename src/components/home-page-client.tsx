@@ -196,127 +196,153 @@ export function HomePageClient() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Command 1: /hd */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="bg-pink-600 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
-                  <ImageIcon className="w-4 h-4" /> /hd [image] (scale) (mode)
-                </span>
-                <Badge variant="pink">2×: 100 💰 • 4×: 200 💰</Badge>
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-600 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
+                    <ImageIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /hd [image] (scale) (mode)
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    2×: 100 💰 • 4×: 200 💰
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-pink-500 shrink-0" /> AI Image Upscaling (2× / 4×)
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Sulap fotomu jadi <strong>2× (Standar)</strong> atau <strong>4× (Ultra HD)</strong>!
+                  Dilengkapi pilihan karakter mode <em>Sharp</em> untuk detail tajam atau <em>Soft</em> untuk
+                  hasil halus alami. Cooldown 15 detik.
+                </p>
               </div>
-              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-pink-500" /> AI Image Upscaling (2× / 4×)
-              </h3>
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Sulap fotomu jadi <strong>2× (Standar)</strong> atau <strong>4× (Ultra HD)</strong>!
-                Dilengkapi pilihan karakter mode <em>Sharp</em> untuk detail tajam atau <em>Soft</em> untuk
-                hasil halus alami. Cooldown 15 detik.
-              </p>
             </Card>
 
             {/* Command 2: /filter */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                  <Palette className="w-4 h-4" /> /filter [image] [preset]
-                </span>
-                <Badge variant="pink">Biaya: 50 💰</Badge>
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                    <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /filter [image] [preset]
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Biaya: 50 💰
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <Palette className="w-4 h-4 text-pink-500 shrink-0" /> Aesthetic Photo Filters
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Beri sentuhan warna aesthetic manis pada fotomu dengan 4 preset instan:
+                  <strong> Soft Pink Glow 🌸</strong>, <strong>Vintage Warm ☕</strong>,
+                  <strong> B&amp;W Dreamy 🖤</strong>, dan <strong>Anime Pop 🎨</strong>. Hemat koin tanpa tiket!
+                </p>
               </div>
-              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <Palette className="w-4 h-4 text-pink-500" /> Aesthetic Photo Filters
-              </h3>
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Beri sentuhan warna aesthetic manis pada fotomu dengan 4 preset instan:
-                <strong> Soft Pink Glow 🌸</strong>, <strong>Vintage Warm ☕</strong>,
-                <strong> B&amp;W Dreamy 🖤</strong>, dan <strong>Anime Pop 🎨</strong>. Hemat koin tanpa tiket!
-              </p>
             </Card>
 
             {/* Command 3: /convert */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                  <RefreshCw className="w-4 h-4" /> /convert [image] [format]
-                </span>
-                <Badge variant="pink">Biaya: 25 💰</Badge>
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                    <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /convert [image] [format]
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Biaya: 25 💰
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <RefreshCw className="w-4 h-4 text-pink-500 shrink-0" /> Format Converter &amp; Compressor
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Ubah format gambar secara instan ke <strong>WebP</strong>, <strong>PNG</strong>, atau
+                  <strong> JPG</strong> dengan opsi kualitas kompresi agar file foto kamu ringan dan muat
+                  dikirim di Discord!
+                </p>
               </div>
-              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <RefreshCw className="w-4 h-4 text-pink-500" /> Format Converter &amp; Compressor
-              </h3>
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Ubah format gambar secara instan ke <strong>WebP</strong>, <strong>PNG</strong>, atau
-                <strong> JPG</strong> dengan opsi kualitas kompresi agar file foto kamu ringan dan muat
-                dikirim di Discord!
-              </p>
             </Card>
 
             {/* Command 4: /gift */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="bg-pink-600 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
-                  <Heart className="w-4 h-4 fill-white" /> /gift [user] [amount]
-                </span>
-                <Badge variant="pink">Kado Spesial 💕</Badge>
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-600 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
+                    <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white shrink-0" /> /gift [user] [amount]
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Kado Spesial 💕
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <Heart className="w-4 h-4 text-pink-500 fill-pink-400 shrink-0" /> Kirim Kado Manis ke Teman
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Kirim kado berupa uang jajan 💰 atau tiket limit 🎟️ langsung ke dompet temanmu
+                  disertai kartu ucapan pesan manis! Saldo langsung terkirim secara instan dan aman.
+                </p>
               </div>
-              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-pink-500 fill-pink-400" /> Kirim Kado Manis ke Teman
-              </h3>
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Kirim kado berupa uang jajan 💰 atau tiket limit 🎟️ langsung ke dompet temanmu
-                disertai kartu ucapan pesan manis! Saldo langsung terkirim secara instan dan aman.
-              </p>
             </Card>
 
             {/* Command 5: /claim */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                  <Gift className="w-4 h-4" /> /claim
-                </span>
-                <Badge variant="pink">
-                  <Clock className="w-3 h-3 text-pink-600" /> Daily Streak Multiplier
-                </Badge>
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                    <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /claim
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    <Clock className="w-3 h-3 text-pink-600 shrink-0" /> Daily Streak Multiplier
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <Gift className="w-4 h-4 text-pink-500 shrink-0" /> Hadiah Harian &amp; Streak Bonus
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Klaim berturut-turut setiap hari untuk melipatgandakan hadiahmu! Mulai dari
+                  <strong> +1,000 Money</strong> di Hari 1 hingga <strong>+3,000 Money &amp; +8 Tiket HD</strong> di Hari 7+!
+                </p>
               </div>
-              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-pink-500" /> Hadiah Harian &amp; Streak Bonus
-              </h3>
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Klaim berturut-turut setiap hari untuk melipatgandakan hadiahmu! Mulai dari
-                <strong> +1,000 Money</strong> di Hari 1 hingga <strong>+3,000 Money &amp; +8 Tiket HD</strong> di Hari 7+!
-              </p>
             </Card>
 
-            {/* Command 5: /balance */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                  <Wallet className="w-4 h-4" /> /balance
-                </span>
-                <Badge variant="pink">Gratis</Badge>
+            {/* Command 6: /balance */}
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                    <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /balance
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Gratis
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <Wallet className="w-4 h-4 text-pink-500 shrink-0" /> Cek Dompet &amp; Tiket Limit
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Melihat sisa saldo uang jajan kamu, jumlah tiket limit yang tersedia, serta status
+                  apakah hadiah harian sudah siap diambil atau masih dalam masa cooldown.
+                </p>
               </div>
-              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <Wallet className="w-4 h-4 text-pink-500" /> Cek Dompet &amp; Tiket Limit
-              </h3>
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Melihat sisa saldo uang jajan kamu, jumlah tiket limit yang tersedia, serta status
-                apakah hadiah harian sudah siap diambil atau masih dalam masa cooldown.
-              </p>
             </Card>
 
-            {/* Command 6: /help */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                  <HelpCircle className="w-4 h-4" /> /help
-                </span>
-                <Badge variant="pink">Gratis</Badge>
+            {/* Command 7: /help */}
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                    <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /help
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Gratis
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <HelpCircle className="w-4 h-4 text-pink-500 shrink-0" /> Menu Bantuan Interaktif
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Menampilkan menu bantuan lengkap dengan banner lucu Ayaa Bot, petunjuk penggunaan
+                  masing-masing perintah, serta informasi versi bot.
+                </p>
               </div>
-              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <HelpCircle className="w-4 h-4 text-pink-500" /> Menu Bantuan Interaktif
-              </h3>
-              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Menampilkan menu bantuan lengkap dengan banner lucu Ayaa Bot, petunjuk penggunaan
-                masing-masing perintah, serta informasi versi bot.
-              </p>
             </Card>
           </div>
         </div>
