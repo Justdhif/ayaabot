@@ -135,6 +135,69 @@ const commands = [
     ],
   },
   {
+    name: "watermark",
+    description: "Tempel watermark tanda kepemilikan/hak cipta pada fotomu (25 💰) 🎨",
+    options: [
+      {
+        name: "image",
+        description: "Foto yang mau diberi watermark (maks 10 MB)",
+        type: 11, // ATTACHMENT
+        required: true,
+      },
+      {
+        name: "text",
+        description: "Teks tulisan watermark (misal: @nama_kamu)",
+        type: 3, // STRING
+        required: false,
+      },
+      {
+        name: "position",
+        description: "Posisi peletakan watermark di gambar (Default: Kanan Bawah)",
+        type: 3, // STRING
+        required: false,
+        choices: [
+          { name: "Kanan Bawah (Rekomendasi)", value: "bottom_right" },
+          { name: "Kiri Bawah", value: "bottom_left" },
+          { name: "Tengah (Center)", value: "center" },
+          { name: "Kanan Atas", value: "top_right" },
+        ],
+      },
+      {
+        name: "opacity",
+        description: "Kepekatan watermark (Default: Standar)",
+        type: 3, // STRING
+        required: false,
+        choices: [
+          { name: "Halus Transparan (38%)", value: "subtle" },
+          { name: "Standar (70%)", value: "normal" },
+          { name: "Tegas / Jelas (100%)", value: "solid" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Watermark Foto",
+    type: 3, // MESSAGE context menu command (Klik kanan foto -> Apps -> Watermark Foto)
+  },
+  {
+    name: "avatar",
+    description: "Lihat & unduh foto profil user atau ikon server dalam kualitas 4096px HD 🖼️",
+    options: [
+      {
+        name: "user",
+        description: "User yang ingin dilihat foto profilnya (Default: Diri sendiri)",
+        type: 6, // USER
+        required: false,
+      },
+      {
+        name: "server",
+        description: "Pilih True untuk mengambil foto ikon server saat ini",
+        type: 5, // BOOLEAN
+        required: false,
+      },
+    ],
+  },
+  {
     name: "help",
     description: "Tampilkan menu panduan imut Ayaa Bot~ 🐾",
   },

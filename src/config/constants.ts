@@ -12,9 +12,23 @@ export const ECONOMY = {
 
   FILTER_COST_MONEY: 50,
   CONVERT_COST_MONEY: 25,
+  WATERMARK_COST_MONEY: 25,
 
   CLAIM_COOLDOWN_HOURS: 24,
   HD_COOLDOWN_SECONDS: 15,
+} as const;
+
+export const WATERMARK_POSITIONS = {
+  BOTTOM_RIGHT: "bottom_right",
+  BOTTOM_LEFT: "bottom_left",
+  CENTER: "center",
+  TOP_RIGHT: "top_right",
+} as const;
+
+export const WATERMARK_OPACITY = {
+  SUBTLE: "subtle", // 40%
+  NORMAL: "normal", // 70%
+  SOLID: "solid",   // 100%
 } as const;
 
 export const IMAGE_CONFIG = {

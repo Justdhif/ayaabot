@@ -24,6 +24,8 @@ import {
   History,
   Send,
   Crown,
+  Stamp,
+  User as UserIcon,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -100,7 +102,7 @@ export function HomePageClient() {
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Badge variant="pink">
                   <Sparkles className="w-3.5 h-3.5 text-pink-600" />
-                  <span>v1.2.0 (Social &amp; Economy)</span>
+                  <span>v1.3.0 (Watermark &amp; HD Avatar)</span>
                 </Badge>
               </div>
 
@@ -111,8 +113,11 @@ export function HomePageClient() {
 
               <p className="text-base sm:text-lg text-pink-800/90 max-w-2xl mx-auto font-semibold leading-relaxed">
                 Teman AI gemas untuk bikin fotomu{" "}
-                <strong className="text-pink-950 font-extrabold">2× lebih jernih, tajam &amp; HD</strong>{" "}
-                langsung dari Discord, dilengkapi sistem virtual economy yang manis dan aman!
+                <strong className="text-pink-950 font-extrabold">
+                  2× lebih jernih, tajam &amp; HD
+                </strong>{" "}
+                langsung dari Discord, dilengkapi sistem virtual economy yang
+                manis dan aman!
               </p>
             </div>
           </Card>
@@ -186,7 +191,8 @@ export function HomePageClient() {
               Daftar Perintah di Discord
             </h2>
             <p className="text-sm sm:text-base text-pink-800/90 font-semibold mt-1">
-              Cukup ketik perintah di bawah ini di server Discord tempat Ayaa Bot berada:
+              Cukup ketik perintah di bawah ini di server Discord tempat Ayaa
+              Bot berada:
             </p>
           </div>
 
@@ -196,19 +202,22 @@ export function HomePageClient() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
                   <span className="bg-pink-600 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
-                    <ImageIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /hd [image] (scale) (mode)
+                    <ImageIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />{" "}
+                    /hd [image] (scale) (mode)
                   </span>
                   <Badge variant="pink" className="shrink-0 text-xs font-bold">
                     2×: 100 💰 • 4×: 200 💰
                   </Badge>
                 </div>
                 <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-pink-500 shrink-0" /> AI Image Upscaling (2× / 4×)
+                  <Sparkles className="w-4 h-4 text-pink-500 shrink-0" /> AI
+                  Image Upscaling (2× / 4×)
                 </h3>
                 <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
-                  Sulap fotomu jadi <strong>2× (Standar)</strong> atau <strong>4× (Ultra HD)</strong>!
-                  Dilengkapi pilihan karakter mode <em>Sharp</em> untuk detail tajam atau <em>Soft</em> untuk
-                  hasil halus alami. Cooldown 15 detik.
+                  Sulap fotomu jadi <strong>2× (Standar)</strong> atau{" "}
+                  <strong>4× (Ultra HD)</strong>! Dilengkapi pilihan karakter
+                  mode <em>Sharp</em> untuk detail tajam atau <em>Soft</em>{" "}
+                  untuk hasil halus alami. Cooldown 15 detik.
                 </p>
               </div>
             </Card>
@@ -218,19 +227,24 @@ export function HomePageClient() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
                   <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                    <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /filter [image] [preset]
+                    <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />{" "}
+                    /filter [image] [preset]
                   </span>
                   <Badge variant="pink" className="shrink-0 text-xs font-bold">
                     Biaya: 50 💰
                   </Badge>
                 </div>
                 <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                  <Palette className="w-4 h-4 text-pink-500 shrink-0" /> Aesthetic Photo Filters
+                  <Palette className="w-4 h-4 text-pink-500 shrink-0" />{" "}
+                  Aesthetic Photo Filters
                 </h3>
                 <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
-                  Beri sentuhan warna aesthetic manis pada fotomu dengan 4 preset instan:
-                  <strong> Soft Pink Glow 🌸</strong>, <strong>Vintage Warm ☕</strong>,
-                  <strong> B&amp;W Dreamy 🖤</strong>, dan <strong>Anime Pop 🎨</strong>. Hemat koin tanpa tiket!
+                  Beri sentuhan warna aesthetic manis pada fotomu dengan 4
+                  preset instan:
+                  <strong> Soft Pink Glow 🌸</strong>,{" "}
+                  <strong>Vintage Warm ☕</strong>,
+                  <strong> B&amp;W Dreamy 🖤</strong>, dan{" "}
+                  <strong>Anime Pop 🎨</strong>. Hemat koin tanpa tiket!
                 </p>
               </div>
             </Card>
@@ -240,19 +254,22 @@ export function HomePageClient() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
                   <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                    <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /convert [image] [format]
+                    <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />{" "}
+                    /convert [image] [format]
                   </span>
                   <Badge variant="pink" className="shrink-0 text-xs font-bold">
                     Biaya: 25 💰
                   </Badge>
                 </div>
                 <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                  <RefreshCw className="w-4 h-4 text-pink-500 shrink-0" /> Format Converter &amp; Compressor
+                  <RefreshCw className="w-4 h-4 text-pink-500 shrink-0" />{" "}
+                  Format Converter &amp; Compressor
                 </h3>
                 <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
-                  Ubah format gambar secara instan ke <strong>WebP</strong>, <strong>PNG</strong>, atau
-                  <strong> JPG</strong> dengan opsi kualitas kompresi agar file foto kamu ringan dan muat
-                  dikirim di Discord!
+                  Ubah format gambar secara instan ke <strong>WebP</strong>,{" "}
+                  <strong>PNG</strong>, atau
+                  <strong> JPG</strong> dengan opsi kualitas kompresi agar file
+                  foto kamu ringan dan muat dikirim di Discord!
                 </p>
               </div>
             </Card>
@@ -262,18 +279,21 @@ export function HomePageClient() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
                   <span className="bg-pink-600 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
-                    <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white shrink-0" /> /gift [user] [amount]
+                    <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white shrink-0" />{" "}
+                    /gift [user] [amount]
                   </span>
                   <Badge variant="pink" className="shrink-0 text-xs font-bold">
                     Kado Spesial 💕
                   </Badge>
                 </div>
                 <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                  <Heart className="w-4 h-4 text-pink-500 fill-pink-400 shrink-0" /> Kirim Kado Manis ke Teman
+                  <Heart className="w-4 h-4 text-pink-500 fill-pink-400 shrink-0" />{" "}
+                  Kirim Kado Manis ke Teman
                 </h3>
                 <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
-                  Kirim kado berupa uang jajan 💰 atau tiket limit 🎟️ langsung ke dompet temanmu
-                  disertai kartu ucapan pesan manis! Saldo langsung terkirim secara instan dan aman.
+                  Kirim kado berupa uang jajan 💰 atau tiket limit 🎟️ langsung
+                  ke dompet temanmu disertai kartu ucapan pesan manis! Saldo
+                  langsung terkirim secara instan dan aman.
                 </p>
               </div>
             </Card>
@@ -283,18 +303,23 @@ export function HomePageClient() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
                   <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                    <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /claim
+                    <Gift className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />{" "}
+                    /claim
                   </span>
                   <Badge variant="pink" className="shrink-0 text-xs font-bold">
-                    <Clock className="w-3 h-3 text-pink-600 shrink-0" /> Daily Streak Multiplier
+                    <Clock className="w-3 h-3 text-pink-600 shrink-0" /> Daily
+                    Streak Multiplier
                   </Badge>
                 </div>
                 <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                  <Gift className="w-4 h-4 text-pink-500 shrink-0" /> Hadiah Harian &amp; Streak Bonus
+                  <Gift className="w-4 h-4 text-pink-500 shrink-0" /> Hadiah
+                  Harian &amp; Streak Bonus
                 </h3>
                 <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
-                  Klaim berturut-turut setiap hari untuk melipatgandakan hadiahmu! Mulai dari
-                  <strong> +1,000 Money</strong> di Hari 1 hingga <strong>+3,000 Money &amp; +8 Tiket HD</strong> di Hari 7+!
+                  Klaim berturut-turut setiap hari untuk melipatgandakan
+                  hadiahmu! Mulai dari
+                  <strong> +1,000 Money</strong> di Hari 1 hingga{" "}
+                  <strong>+3,000 Money &amp; +8 Tiket HD</strong> di Hari 7+!
                 </p>
               </div>
             </Card>
@@ -304,23 +329,66 @@ export function HomePageClient() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
                   <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
-                    <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /balance
+                    <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />{" "}
+                    /balance
                   </span>
                   <Badge variant="pink" className="shrink-0 text-xs font-bold">
                     Gratis
                   </Badge>
                 </div>
                 <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                  <Wallet className="w-4 h-4 text-pink-500 shrink-0" /> Cek Dompet &amp; Tiket Limit
+                  <Wallet className="w-4 h-4 text-pink-500 shrink-0" /> Cek
+                  Dompet &amp; Tiket Limit
                 </h3>
                 <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
-                  Melihat sisa saldo uang jajan kamu, jumlah tiket limit yang tersedia, serta status
-                  apakah hadiah harian sudah siap diambil atau masih dalam masa cooldown.
+                  Melihat sisa saldo uang jajan kamu, jumlah tiket limit yang
+                  tersedia, serta status apakah hadiah harian sudah siap diambil
+                  atau masih dalam masa cooldown.
                 </p>
               </div>
             </Card>
 
-            {/* Command 7: /help */}
+            {/* Command 7: /watermark */}
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                    <Stamp className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /watermark [image] (text)
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Biaya: 25 💰
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <Stamp className="w-4 h-4 text-pink-500 shrink-0" /> Watermark &amp; Hak Cipta Gambar
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Tempel watermark nama atau teks kustom pada karyamu dengan pilihan posisi dan opasitas transparan. Bisa via command maupun klik kanan foto di chat (<em>Apps ➔ Watermark Foto</em>)!
+                </p>
+              </div>
+            </Card>
+
+            {/* Command 8: /avatar */}
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-600 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
+                    <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /avatar (user) (server)
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Gratis 🖼️
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <UserIcon className="w-4 h-4 text-pink-500 shrink-0" /> HD Avatar &amp; Server Icon Grabber
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Ambil foto profil teman atau ikon server dalam resolusi maksimal hingga <strong>4096px HD</strong>, lengkap dengan tombol instan untuk menyulap foto jadi <strong>2× HD</strong>!
+                </p>
+              </div>
+            </Card>
+
+            {/* Command 9: /help */}
             <Card className="p-5 sm:p-6 flex flex-col justify-between">
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
@@ -335,8 +403,7 @@ export function HomePageClient() {
                   <HelpCircle className="w-4 h-4 text-pink-500 shrink-0" /> Menu Bantuan Interaktif
                 </h3>
                 <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
-                  Menampilkan menu bantuan lengkap dengan banner lucu Ayaa Bot, petunjuk penggunaan
-                  masing-masing perintah, serta informasi versi bot.
+                  Menampilkan menu bantuan lengkap dengan banner lucu Ayaa Bot, petunjuk penggunaan masing-masing perintah, serta informasi versi bot.
                 </p>
               </div>
             </Card>
@@ -356,21 +423,98 @@ export function HomePageClient() {
               Catatan Pembaruan Ayaa Bot
             </h2>
             <p className="text-sm sm:text-base text-pink-800/90 font-semibold mt-1">
-              Rangkuman fitur baru dan peningkatan manis yang dirilis di setiap versi:
+              Rangkuman fitur baru dan peningkatan manis yang dirilis di setiap
+              versi:
             </p>
           </div>
 
           <div className="space-y-6">
-            {/* Version 1.2.0 */}
+            {/* Version 1.3.0 */}
             <Card className="p-7 sm:p-8 relative overflow-hidden border-2 border-pink-400 bg-gradient-to-br from-white/95 via-pink-50/60 to-pink-100/50 shadow-lg shadow-pink-500/10">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-200/70 mb-5">
                 <div className="flex items-center gap-2.5">
                   <span className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-sm px-3.5 py-1 rounded-full shadow-sm shadow-pink-500/25">
+                    v1.3.0
+                  </span>
+                  <Badge variant="pink" className="border-pink-300">
+                    <Sparkles className="w-3.5 h-3.5 text-pink-600" />
+                    <span>Versi Terbaru • Media Utilities &amp; Anti-Rugi</span>
+                  </Badge>
+                </div>
+                <span className="text-xs sm:text-sm text-pink-700 font-bold bg-pink-100 px-3 py-1 rounded-full">
+                  September 2026
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Stamp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Watermark Foto (/watermark &amp; Context Menu)
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Lindungi hak cipta karyamu dengan watermark teks semi-transparan. Bisa lewat slash command atau klik kanan pesan foto di chat (<em>Apps ➔ Watermark Foto</em>)!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      HD Avatar &amp; Server Icon Grabber (/avatar)
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Unduh foto profil teman atau ikon server dalam resolusi tajam hingga <strong>4096px HD</strong>, lengkap dengan tombol instan untuk menyulap foto jadi 2× HD!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Sistem 100% Anti-Rugi &amp; Auto-Refund
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Jaminan saldo Money dan tiket Limit tidak pernah berkurang jika respon Discord gagal atau terjadi kendala sistem. Auto-refund seketika!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Crown className="w-5 h-5 text-amber-500 fill-amber-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Auto-Role Discord: @ayaa sweetheart
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      User yang konsisten claim 3 hari berturut-turut otomatis dihadiahi role eksklusif <strong>@ayaa sweetheart</strong> di server Discord!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Version 1.2.0 */}
+            <Card className="p-7 sm:p-8 relative overflow-hidden border border-pink-200/80 bg-white/80">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-200/70 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="bg-pink-400 text-pink-950 font-black text-sm px-3.5 py-1 rounded-full shadow-sm shadow-pink-500/25">
                     v1.2.0
                   </span>
                   <Badge variant="pink" className="border-pink-300">
                     <Sparkles className="w-3.5 h-3.5 text-pink-600" />
-                    <span>Versi Terbaru • Social &amp; Economy Special</span>
+                    <span>Social &amp; Economy Special</span>
                   </Badge>
                 </div>
                 <span className="text-xs sm:text-sm text-pink-700 font-bold bg-pink-100 px-3 py-1 rounded-full">
@@ -388,7 +532,9 @@ export function HomePageClient() {
                       Fitur Kirim Kado Manis (/gift)
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Kirim kado koin 💰 atau tiket limit 🎟️ ke teman spesialmu dengan ucapan manis khusus, diproses secara instan &amp; aman.
+                      Kirim kado koin 💰 atau tiket limit 🎟️ ke teman spesialmu
+                      dengan ucapan manis khusus, diproses secara instan &amp;
+                      aman.
                     </p>
                   </div>
                 </div>
@@ -402,7 +548,9 @@ export function HomePageClient() {
                       Daily Claim Streak &amp; Multiplier Hadiah
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Sistem streak berturut-turut! Hadiah bertambah banyak tiap hari dari +1.000 Money (Hari 1) hingga +3.000 Money &amp; +8 Tiket HD (Hari 7+).
+                      Sistem streak berturut-turut! Hadiah bertambah banyak tiap
+                      hari dari +1.000 Money (Hari 1) hingga +3.000 Money &amp;
+                      +8 Tiket HD (Hari 7+).
                     </p>
                   </div>
                 </div>
@@ -416,7 +564,9 @@ export function HomePageClient() {
                       Auto-Role Khusus Discord: @ayaa sweetheart
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      User yang konsisten claim 3 hari berturut-turut otomatis dihadiahi role eksklusif <strong>@ayaa sweetheart</strong> di server Discord!
+                      User yang konsisten claim 3 hari berturut-turut otomatis
+                      dihadiahi role eksklusif <strong>@ayaa sweetheart</strong>{" "}
+                      di server Discord!
                     </p>
                   </div>
                 </div>
@@ -450,7 +600,10 @@ export function HomePageClient() {
                       Opsi Skala (2× &amp; 4×) &amp; Mode Karakter di /hd
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Dukungan pembesaran <strong>2× (Standar)</strong> dan <strong>4× (Ultra HD)</strong> dengan pilihan mode <em>Sharp</em> (detail tajam ekstra) serta <em>Soft</em> (halus alami).
+                      Dukungan pembesaran <strong>2× (Standar)</strong> dan{" "}
+                      <strong>4× (Ultra HD)</strong> dengan pilihan mode{" "}
+                      <em>Sharp</em> (detail tajam ekstra) serta <em>Soft</em>{" "}
+                      (halus alami).
                     </p>
                   </div>
                 </div>
@@ -464,7 +617,12 @@ export function HomePageClient() {
                       Command Baru: /filter (Aesthetic Presets)
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      4 Preset estetik instan: <em>Soft Pink Glow 🌸, Vintage Warm ☕, B&amp;W Dreamy 🖤,</em> dan <em>Anime Pop 🎨</em> hanya 50 Money tanpa potong tiket.
+                      4 Preset estetik instan:{" "}
+                      <em>
+                        Soft Pink Glow 🌸, Vintage Warm ☕, B&amp;W Dreamy 🖤,
+                      </em>{" "}
+                      dan <em>Anime Pop 🎨</em> hanya 50 Money tanpa potong
+                      tiket.
                     </p>
                   </div>
                 </div>
@@ -478,7 +636,8 @@ export function HomePageClient() {
                       Command Baru: /convert (Format &amp; Compressor)
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Ubah format gambar ke WebP, PNG, atau JPG dengan opsi kualitas kompresi pintar hemat kuota untuk Discord.
+                      Ubah format gambar ke WebP, PNG, atau JPG dengan opsi
+                      kualitas kompresi pintar hemat kuota untuk Discord.
                     </p>
                   </div>
                 </div>
@@ -492,7 +651,9 @@ export function HomePageClient() {
                       Optimalisasi Serverless Vercel &amp; Asynchronous Response
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Eksekusi image processing di latar belakang menggunakan <code>waitUntil</code>, bebas timeout Discord 3 detik dan proteksi memori OOM.
+                      Eksekusi image processing di latar belakang menggunakan{" "}
+                      <code>waitUntil</code>, bebas timeout Discord 3 detik dan
+                      proteksi memori OOM.
                     </p>
                   </div>
                 </div>
@@ -506,7 +667,9 @@ export function HomePageClient() {
                       Vercel Cron Jobs (Pengingat Harian 08:00 WIB)
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Cron job otomatis via <code>vercel.json</code> yang mengecek user siap claim dan mengirim sapaan manis harian ke Discord.
+                      Cron job otomatis via <code>vercel.json</code> yang
+                      mengecek user siap claim dan mengirim sapaan manis harian
+                      ke Discord.
                     </p>
                   </div>
                 </div>
@@ -520,7 +683,9 @@ export function HomePageClient() {
                       Tombol Interaktif Discord (Message Components)
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Tombol interaktif <code>[🎁 Ambil Daily Claim]</code> langsung dan <code>[📜 Riwayat Transaksi]</code> secara ephemeral pada perintah <code>/balance</code>.
+                      Tombol interaktif <code>[🎁 Ambil Daily Claim]</code>{" "}
+                      langsung dan <code>[📜 Riwayat Transaksi]</code> secara
+                      ephemeral pada perintah <code>/balance</code>.
                     </p>
                   </div>
                 </div>
@@ -554,7 +719,9 @@ export function HomePageClient() {
                       Core AI Image Upscaling (2× HD)
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Perintah <code>/hd</code> dengan algoritma Lanczos3 berkualitas tinggi untuk mempertajam foto langsung dari Discord.
+                      Perintah <code>/hd</code> dengan algoritma Lanczos3
+                      berkualitas tinggi untuk mempertajam foto langsung dari
+                      Discord.
                     </p>
                   </div>
                 </div>
@@ -568,7 +735,8 @@ export function HomePageClient() {
                       Virtual Sweet Economy &amp; Daily Claim
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Sistem <code>/claim</code> uang jajan harian (+1.000 Money &amp; +5 Limit) dengan cooldown presisi 24 jam per user.
+                      Sistem <code>/claim</code> uang jajan harian (+1.000 Money
+                      &amp; +5 Limit) dengan cooldown presisi 24 jam per user.
                     </p>
                   </div>
                 </div>
@@ -582,7 +750,8 @@ export function HomePageClient() {
                       Cek Dompet (/balance) &amp; Whitelist Keamanan
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Pemeriksaan saldo koin &amp; sisa tiket limit, terproteksi sistem private whitelist berbasis Neon PostgreSQL.
+                      Pemeriksaan saldo koin &amp; sisa tiket limit, terproteksi
+                      sistem private whitelist berbasis Neon PostgreSQL.
                     </p>
                   </div>
                 </div>
@@ -596,7 +765,8 @@ export function HomePageClient() {
                       Menu Bantuan (/help) &amp; Landing Page Manis
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
-                      Embed panduan Discord interaktif dan landing page resmi bernuansa cute soft pastel pink.
+                      Embed panduan Discord interaktif dan landing page resmi
+                      bernuansa cute soft pastel pink.
                     </p>
                   </div>
                 </div>
@@ -630,7 +800,9 @@ export function HomePageClient() {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h4 className="text-xl font-black text-pink-950">Justdhif</h4>
+                      <h4 className="text-xl font-black text-pink-950">
+                        Justdhif
+                      </h4>
                       <BadgeCheck className="w-5 h-5 text-pink-500 fill-pink-100" />
                     </div>
                     <div className="text-sm text-pink-700 font-extrabold">
@@ -650,7 +822,11 @@ export function HomePageClient() {
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold px-5 py-2.5 rounded-full text-xs sm:text-sm shadow-md transition-all hover:-translate-y-0.5"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
                     <path
                       fillRule="evenodd"
                       clipRule="evenodd"
@@ -703,7 +879,11 @@ export function HomePageClient() {
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-extrabold px-5 py-2.5 rounded-full text-xs sm:text-sm shadow-md transition-all hover:-translate-y-0.5"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
                     <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.5 6.3 6.3 0 0 0 1.86-4.5V8.84a8.16 8.16 0 0 0 4.91 1.63v-3.45a4.85 4.85 0 0 1-1-.33z" />
                   </svg>
                   <span>Kunjungi TikTok @acyash_</span>
@@ -727,8 +907,9 @@ export function HomePageClient() {
               Contact &amp; Help Desk
             </h2>
             <p className="max-w-lg mx-auto text-sm sm:text-base text-pink-800/90 font-medium mb-6 leading-relaxed">
-              Mengalami kendala saat menggunakan bot, ingin mendaftarkan ID Discord teman ke whitelist,
-              atau ada pertanyaan seputar Ayaa Bot? Langsung hubungi kami melalui WhatsApp yaa:
+              Mengalami kendala saat menggunakan bot, ingin mendaftarkan ID
+              Discord teman ke whitelist, atau ada pertanyaan seputar Ayaa Bot?
+              Langsung hubungi kami melalui WhatsApp yaa:
             </p>
 
             <div className="flex justify-center">
@@ -758,7 +939,8 @@ export function HomePageClient() {
             <strong className="text-pink-950">Ayaa Bot</strong>
           </p>
           <p className="text-xs text-pink-600/90 mt-1">
-            © {new Date().getFullYear()} Ayaa Bot. All rights reserved. • Private AI Image Upscaling &amp; Economy Bot
+            © {new Date().getFullYear()} Ayaa Bot. All rights reserved. •
+            Private AI Image Upscaling &amp; Economy Bot
           </p>
         </div>
       </footer>

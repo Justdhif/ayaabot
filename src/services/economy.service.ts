@@ -267,6 +267,53 @@ export async function deductForConvert(userId: string, targetFormat: string): Pr
   };
 }
 
+export async function deductForWatermark(userId: string): Promise<SimpleDeductResult> {
+  const [currentUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!currentUser) {
+    return { success: false, error: "User not found" };
+  }
+
+  const costMoney = ECONOMY.WATERMARK_COST_MONEY;
+
+  if (currentUser.money < costMoney) {
+    return { success: false, insufficientMoney: true };
+  }
+
+  const now = new Date();
+
+  const updatedUser = await db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(users)
+      .set({
+        money: sql`${users.money} - ${costMoney}`,
+        updatedAt: now,
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    await tx.insert(transactions).values({
+      userId: userId,
+      type: "WATERMARK",
+      moneyChange: -costMoney,
+      limitChange: 0,
+      description: "Watermark image cost",
+      createdAt: now,
+    });
+
+    return updated;
+  });
+
+  return {
+    success: true,
+    user: updatedUser,
+  };
+}
+
 export async function getUserRecentTransactions(
   userId: string,
   limit: number = 5

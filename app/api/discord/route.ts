@@ -14,6 +14,9 @@ import { handleHdCommand } from "@/commands/hd";
 import { handleFilterCommand } from "@/commands/filter";
 import { handleConvertCommand } from "@/commands/convert";
 import { handleGiftCommand } from "@/commands/gift";
+import { handleWatermarkCommand } from "@/commands/watermark";
+import { handleAvatarCommand } from "@/commands/avatar";
+import { getDiscordAvatarUrl } from "@/services/avatar.service";
 import { BOT_THEME, ECONOMY } from "@/config/constants";
 
 export const maxDuration = 60; // Allow up to 60s execution for image processing
@@ -420,6 +423,145 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ type: 5 });
         }
 
+        case "watermark": {
+          const options = interaction.data?.options || [];
+          const imageOption = options.find((opt: any) => opt.name === "image");
+          const textOption = options.find((opt: any) => opt.name === "text");
+          const posOption = options.find((opt: any) => opt.name === "position");
+          const opacityOption = options.find((opt: any) => opt.name === "opacity");
+
+          const attachmentId = imageOption?.value;
+          const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+          const text = textOption?.value;
+          const position = posOption?.value;
+          const opacity = opacityOption?.value;
+
+          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+          const interactionToken = interaction.token;
+
+          waitUntil(
+            (async () => {
+              try {
+                const wmResult = await handleWatermarkCommand(user, attachment, {
+                  text,
+                  position,
+                  opacity,
+                });
+                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, wmResult);
+
+                // Anti-Rugi Guarantee: Auto-refund jika pengiriman file watermark ke Discord gagal
+                if (!delivered && wmResult.fileAttachment) {
+                  await refundUserBalance(user.id, ECONOMY.WATERMARK_COST_MONEY, 0, "Discord gagal mengirim file Watermark");
+
+                  await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                    responsePayload: {
+                      type: 4,
+                      data: {
+                        embeds: [
+                          {
+                            title: "😿 Gagal Mengirim Hasil Watermark",
+                            color: BOT_THEME.COLOR_ROSE,
+                            description:
+                              "Maaf yaa manis, Discord gagal menerima kiriman foto watermark. Tapi tenang aja, **saldo koin kamu sudah 100% dikembalikan secara otomatis**! 🌸✨",
+                          },
+                        ],
+                      },
+                    },
+                  });
+                }
+              } catch (err) {
+                console.error("Background Watermark processing error:", err);
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    type: 4,
+                    data: {
+                      embeds: [
+                        {
+                          title: "😿 Ups, Gagal Memproses Watermark",
+                          color: BOT_THEME.COLOR_ROSE,
+                          description:
+                            "Maaf yaa manis, terjadi kendala saat menempelkan watermark. Tapi tenang aja, **saldo kamu tetap utuh 100% dan tidak terpotong** kok! 💕",
+                        },
+                      ],
+                    },
+                  },
+                });
+              }
+            })()
+          );
+
+          return NextResponse.json({ type: 5 });
+        }
+
+        // Message Context Menu Command (Klik kanan foto di chat -> Apps -> Watermark Foto)
+        case "Watermark Foto": {
+          const targetMessageId = interaction.data?.target_id;
+          const targetMessage = interaction.data?.resolved?.messages?.[targetMessageId];
+          const attachment = targetMessage?.attachments?.[0];
+
+          if (!attachment || !attachment.url) {
+            return NextResponse.json({
+              type: 4,
+              data: {
+                embeds: [
+                  {
+                    title: "🌸 Mana Fotonya Manis? 📷",
+                    color: BOT_THEME.COLOR_ROSE,
+                    description: "Pesan yang kamu pilih tidak memiliki lampiran foto yaa manis~ 🥺",
+                  },
+                ],
+                flags: 64,
+              },
+            });
+          }
+
+          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+          const interactionToken = interaction.token;
+
+          waitUntil(
+            (async () => {
+              try {
+                const wmResult = await handleWatermarkCommand(user, attachment, {
+                  text: `@${user.username || "Ayaa Bot"}`,
+                });
+                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, wmResult);
+
+                if (!delivered && wmResult.fileAttachment) {
+                  await refundUserBalance(user.id, ECONOMY.WATERMARK_COST_MONEY, 0, "Discord gagal mengirim file Watermark");
+                }
+              } catch (err) {
+                console.error("Context menu watermark error:", err);
+              }
+            })()
+          );
+
+          return NextResponse.json({ type: 5 });
+        }
+
+        case "avatar": {
+          const options = interaction.data?.options || [];
+          const userOption = options.find((opt: any) => opt.name === "user");
+          const serverOption = options.find((opt: any) => opt.name === "server");
+
+          if (serverOption?.value === true) {
+            const avatarRes = handleAvatarCommand({
+              isServerIcon: true,
+              guildId: interaction.guild_id,
+              guildIconHash: interaction.guild?.icon,
+              guildName: interaction.guild?.name,
+            });
+            return NextResponse.json(avatarRes);
+          }
+
+          let targetUser = interaction.member?.user || interaction.user;
+          if (userOption?.value) {
+            targetUser = interaction.data?.resolved?.users?.[userOption.value] || targetUser;
+          }
+
+          const avatarRes = handleAvatarCommand({ targetUser });
+          return NextResponse.json(avatarRes);
+        }
+
         default: {
           return NextResponse.json({
             type: 4,
@@ -520,6 +662,44 @@ export async function POST(req: NextRequest) {
           ],
         },
       });
+    }
+
+    // Button 3: Upscale Avatar to 2x HD
+    if (action === "btn_hd_avatar") {
+      const targetUserId = customId.split(":")[1] || discordUserId;
+      const avatarUrl = getDiscordAvatarUrl(targetUserId, null, 2048);
+
+      const avatarAttachment = {
+        id: "avatar",
+        filename: `${targetUserId}_avatar.png`,
+        url: avatarUrl,
+        size: 0,
+      };
+
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const hdResult = await handleHdCommand(user, avatarAttachment, { scale: 2, mode: "sharp" });
+            const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, hdResult);
+
+            if (!delivered && hdResult.fileAttachment) {
+              await refundUserBalance(
+                user.id,
+                ECONOMY.HD_COST_MONEY_2X,
+                ECONOMY.HD_COST_LIMIT_2X,
+                "Discord gagal mengirim HD Avatar"
+              );
+            }
+          } catch (err) {
+            console.error("Avatar HD upscale error:", err);
+          }
+        })()
+      );
+
+      return NextResponse.json({ type: 5 });
     }
 
     return NextResponse.json({
