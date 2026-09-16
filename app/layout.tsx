@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   description:
     "Private Discord bot untuk image upscaling 2× HD dan virtual economy gemas. Created with love by Justdhif.",
   icons: {
-    icon: "/avatar.png",
-    apple: "/avatar.png",
+    icon: "/avatar.jpeg",
+    apple: "/avatar.jpeg",
   },
   openGraph: {
     title: "Ayaa Bot 🌸 — Cute AI Image Upscaler",
