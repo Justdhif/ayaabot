@@ -99,10 +99,6 @@ export function HomePageClient() {
             <div className="px-6 mt-4">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Badge variant="pink">
-                  <Flower2 className="w-3.5 h-3.5 text-pink-600" />
-                  <span>Official Landing Page</span>
-                </Badge>
-                <Badge variant="pink">
                   <Sparkles className="w-3.5 h-3.5 text-pink-600" />
                   <span>v1.2.0 (Social &amp; Economy)</span>
                 </Badge>
