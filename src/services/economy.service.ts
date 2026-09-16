@@ -302,10 +302,17 @@ export async function transferGift(
   targetDiscordId: string,
   amount: number,
   resource: "money" | "limit" = "money",
-  message?: string
+  message?: string,
+  targetUsername?: string
 ): Promise<GiftResult> {
-  if (amount <= 0) {
-    return { success: false, error: "Jumlah kado harus lebih dari 0 yaa manis! 🎀" };
+  const safeAmount = Math.floor(amount);
+
+  if (!targetDiscordId) {
+    return { success: false, error: "Sebutkan teman yang ingin kamu beri kado yaa manis! 🎀" };
+  }
+
+  if (safeAmount <= 0 || isNaN(safeAmount)) {
+    return { success: false, error: "Jumlah kado harus berupa angka positif lebih dari 0 yaa manis! 🎀" };
   }
 
   if (senderDiscordId === targetDiscordId) {
@@ -317,22 +324,43 @@ export async function transferGift(
     return { success: false, error: "Akun kamu belum terdaftar di whitelist." };
   }
 
-  const receiver = await getUserByDiscordId(targetDiscordId);
+  let receiver = await getUserByDiscordId(targetDiscordId);
   if (!receiver) {
-    return { success: false, error: "Pengguna tujuan belum terdaftar di whitelist Ayaa Bot yaa~ 🥺" };
+    try {
+      const [newRec] = await db
+        .insert(users)
+        .values({
+          discordId: targetDiscordId,
+          username: targetUsername || "Teman Manis",
+          money: 0,
+          limitCount: 0,
+          claimStreak: 0,
+        })
+        .onConflictDoNothing()
+        .returning();
+
+      receiver = newRec || (await getUserByDiscordId(targetDiscordId));
+    } catch (insertErr) {
+      console.warn("[Gift] Auto-provision receiver error:", insertErr);
+      receiver = await getUserByDiscordId(targetDiscordId);
+    }
   }
 
-  if (resource === "money" && sender.money < amount) {
+  if (!receiver) {
+    return { success: false, error: "Ayaa gagal menyiapkan profil penerima kado. Coba lagi yaa~ 🥺" };
+  }
+
+  if (resource === "money" && sender.money < safeAmount) {
     return {
       success: false,
-      error: `Saldo uang jajan kamu tidak cukup. Kamu punya **${sender.money.toLocaleString("id-ID")} Money**, tapi mau kirim **${amount.toLocaleString("id-ID")} Money**. 👛`,
+      error: `Saldo uang jajan kamu tidak cukup. Kamu punya **${sender.money.toLocaleString("id-ID")} Money**, tapi mau kirim **${safeAmount.toLocaleString("id-ID")} Money**. 👛`,
     };
   }
 
-  if (resource === "limit" && sender.limitCount < amount) {
+  if (resource === "limit" && sender.limitCount < safeAmount) {
     return {
       success: false,
-      error: `Tiket limit kamu tidak cukup. Kamu punya **${sender.limitCount} Limit**, tapi mau kirim **${amount} Limit**. 🎟️`,
+      error: `Tiket limit kamu tidak cukup. Kamu punya **${sender.limitCount} Limit**, tapi mau kirim **${safeAmount} Limit**. 🎟️`,
     };
   }
 
@@ -343,8 +371,8 @@ export async function transferGift(
     const [uSender] = await tx
       .update(users)
       .set({
-        money: resource === "money" ? sql`${users.money} - ${amount}` : users.money,
-        limitCount: resource === "limit" ? sql`${users.limitCount} - ${amount}` : users.limitCount,
+        money: resource === "money" ? sql`${users.money} - ${safeAmount}` : users.money,
+        limitCount: resource === "limit" ? sql`${users.limitCount} - ${safeAmount}` : users.limitCount,
         updatedAt: now,
       })
       .where(eq(users.id, sender.id))
@@ -353,8 +381,8 @@ export async function transferGift(
     const [uReceiver] = await tx
       .update(users)
       .set({
-        money: resource === "money" ? sql`${users.money} + ${amount}` : users.money,
-        limitCount: resource === "limit" ? sql`${users.limitCount} + ${amount}` : users.limitCount,
+        money: resource === "money" ? sql`${users.money} + ${safeAmount}` : users.money,
+        limitCount: resource === "limit" ? sql`${users.limitCount} + ${safeAmount}` : users.limitCount,
         updatedAt: now,
       })
       .where(eq(users.id, receiver.id))
@@ -364,8 +392,8 @@ export async function transferGift(
     await tx.insert(transactions).values({
       userId: sender.id,
       type: "GIFT_SENT",
-      moneyChange: resource === "money" ? -amount : 0,
-      limitChange: resource === "limit" ? -amount : 0,
+      moneyChange: resource === "money" ? -safeAmount : 0,
+      limitChange: resource === "limit" ? -safeAmount : 0,
       description: `Kirim kado untuk @${receiver.username || receiver.discordId}: "${cleanMsg}"`,
       createdAt: now,
     });
@@ -374,8 +402,8 @@ export async function transferGift(
     await tx.insert(transactions).values({
       userId: receiver.id,
       type: "GIFT_RECEIVED",
-      moneyChange: resource === "money" ? amount : 0,
-      limitChange: resource === "limit" ? amount : 0,
+      moneyChange: resource === "money" ? safeAmount : 0,
+      limitChange: resource === "limit" ? safeAmount : 0,
       description: `Terima kado dari @${sender.username || sender.discordId}: "${cleanMsg}"`,
       createdAt: now,
     });
@@ -387,7 +415,7 @@ export async function transferGift(
     success: true,
     sender: updatedSender,
     receiver: updatedReceiver,
-    amount,
+    amount: safeAmount,
     resource,
     message: cleanMsg,
   };

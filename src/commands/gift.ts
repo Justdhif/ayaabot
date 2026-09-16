@@ -6,14 +6,16 @@ export async function handleGiftCommand(
   targetDiscordId: string,
   amount: number,
   resource: "money" | "limit" = "money",
-  message?: string
+  message?: string,
+  targetUsername?: string
 ) {
   const result = await transferGift(
     senderDiscordId,
     targetDiscordId,
     amount,
     resource,
-    message
+    message,
+    targetUsername
   );
 
   if (!result.success || !result.sender || !result.receiver) {

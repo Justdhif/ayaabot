@@ -129,133 +129,172 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Command Dispatch
-    switch (commandName) {
-      case "help": {
-        const response = handleHelpCommand();
-        return NextResponse.json(response);
+    try {
+      // Command Dispatch
+      switch (commandName) {
+        case "help": {
+          const response = handleHelpCommand();
+          return NextResponse.json(response);
+        }
+
+        case "balance": {
+          const response = handleBalanceCommand(user);
+          return NextResponse.json(response);
+        }
+
+        case "claim": {
+          const response = await handleClaimCommand(user.discordId, interaction.guild_id);
+          return NextResponse.json(response);
+        }
+
+        case "hd": {
+          const options = interaction.data?.options || [];
+          const imageOption = options.find((opt: any) => opt.name === "image");
+          const scaleOption = options.find((opt: any) => opt.name === "scale");
+          const modeOption = options.find((opt: any) => opt.name === "mode");
+
+          const attachmentId = imageOption?.value;
+          const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+          const scale = scaleOption ? Number(scaleOption.value) : 2;
+          const mode = modeOption ? (modeOption.value as "sharp" | "soft") : "sharp";
+
+          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+          const interactionToken = interaction.token;
+
+          waitUntil(
+            (async () => {
+              try {
+                const hdResult = await handleHdCommand(user, attachment, { scale, mode });
+                await patchDiscordOriginalMessage(applicationId, interactionToken, hdResult);
+              } catch (err) {
+                console.error("Background HD processing error:", err);
+              }
+            })()
+          );
+
+          return NextResponse.json({ type: 5 });
+        }
+
+        case "filter": {
+          const options = interaction.data?.options || [];
+          const imageOption = options.find((opt: any) => opt.name === "image");
+          const presetOption = options.find((opt: any) => opt.name === "preset");
+
+          const attachmentId = imageOption?.value;
+          const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+          const preset = presetOption?.value;
+
+          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+          const interactionToken = interaction.token;
+
+          waitUntil(
+            (async () => {
+              try {
+                const filterResult = await handleFilterCommand(user, attachment, preset);
+                await patchDiscordOriginalMessage(applicationId, interactionToken, filterResult);
+              } catch (err) {
+                console.error("Background Filter processing error:", err);
+              }
+            })()
+          );
+
+          return NextResponse.json({ type: 5 });
+        }
+
+        case "convert": {
+          const options = interaction.data?.options || [];
+          const imageOption = options.find((opt: any) => opt.name === "image");
+          const formatOption = options.find((opt: any) => opt.name === "format");
+          const qualityOption = options.find((opt: any) => opt.name === "quality");
+
+          const attachmentId = imageOption?.value;
+          const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+          const format = formatOption?.value;
+          const quality = qualityOption ? Number(qualityOption.value) : 85;
+
+          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+          const interactionToken = interaction.token;
+
+          waitUntil(
+            (async () => {
+              try {
+                const convertResult = await handleConvertCommand(user, attachment, { format, quality });
+                await patchDiscordOriginalMessage(applicationId, interactionToken, convertResult);
+              } catch (err) {
+                console.error("Background Convert processing error:", err);
+              }
+            })()
+          );
+
+          return NextResponse.json({ type: 5 });
+        }
+
+        case "gift": {
+          const options = interaction.data?.options || [];
+          const userOption = options.find((opt: any) => opt.name === "user" || opt.name === "target");
+          const amountOption = options.find((opt: any) => opt.name === "amount");
+          const resourceOption = options.find((opt: any) => opt.name === "resource");
+          const messageOption = options.find((opt: any) => opt.name === "message");
+
+          const targetDiscordId = userOption?.value;
+          const amount = Math.floor(Number(amountOption?.value || 0));
+          const resource = (resourceOption?.value as "money" | "limit") || "money";
+          const message = messageOption?.value;
+
+          const resolvedTargetUser = interaction.data?.resolved?.users?.[targetDiscordId];
+          const targetUsername =
+            resolvedTargetUser?.global_name || resolvedTargetUser?.username || "Teman Manis";
+
+          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+          const interactionToken = interaction.token;
+
+          waitUntil(
+            (async () => {
+              try {
+                const giftResult = await handleGiftCommand(
+                  discordUserId,
+                  targetDiscordId,
+                  amount,
+                  resource,
+                  message,
+                  targetUsername
+                );
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: giftResult,
+                });
+              } catch (err) {
+                console.error("Background Gift processing error:", err);
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    type: 4,
+                    data: {
+                      content: "😿 Terjadi kendala saat memproses kado kamu. Coba lagi sebentar lagi yaa~ 🌸",
+                    },
+                  },
+                });
+              }
+            })()
+          );
+
+          return NextResponse.json({ type: 5 });
+        }
+
+        default: {
+          return NextResponse.json({
+            type: 4,
+            data: { content: `❌ Unknown command: \`/${commandName}\`` },
+          });
+        }
       }
-
-      case "balance": {
-        const response = handleBalanceCommand(user);
-        return NextResponse.json(response);
-      }
-
-      case "claim": {
-        const response = await handleClaimCommand(user.discordId, interaction.guild_id);
-        return NextResponse.json(response);
-      }
-
-      case "hd": {
-        const options = interaction.data?.options || [];
-        const imageOption = options.find((opt: any) => opt.name === "image");
-        const scaleOption = options.find((opt: any) => opt.name === "scale");
-        const modeOption = options.find((opt: any) => opt.name === "mode");
-
-        const attachmentId = imageOption?.value;
-        const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
-        const scale = scaleOption ? Number(scaleOption.value) : 2;
-        const mode = modeOption ? (modeOption.value as "sharp" | "soft") : "sharp";
-
-        const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-        const interactionToken = interaction.token;
-
-        waitUntil(
-          (async () => {
-            try {
-              const hdResult = await handleHdCommand(user, attachment, { scale, mode });
-              await patchDiscordOriginalMessage(applicationId, interactionToken, hdResult);
-            } catch (err) {
-              console.error("Background HD processing error:", err);
-            }
-          })()
-        );
-
-        return NextResponse.json({ type: 5 });
-      }
-
-      case "filter": {
-        const options = interaction.data?.options || [];
-        const imageOption = options.find((opt: any) => opt.name === "image");
-        const presetOption = options.find((opt: any) => opt.name === "preset");
-
-        const attachmentId = imageOption?.value;
-        const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
-        const preset = presetOption?.value;
-
-        const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-        const interactionToken = interaction.token;
-
-        waitUntil(
-          (async () => {
-            try {
-              const filterResult = await handleFilterCommand(user, attachment, preset);
-              await patchDiscordOriginalMessage(applicationId, interactionToken, filterResult);
-            } catch (err) {
-              console.error("Background Filter processing error:", err);
-            }
-          })()
-        );
-
-        return NextResponse.json({ type: 5 });
-      }
-
-      case "convert": {
-        const options = interaction.data?.options || [];
-        const imageOption = options.find((opt: any) => opt.name === "image");
-        const formatOption = options.find((opt: any) => opt.name === "format");
-        const qualityOption = options.find((opt: any) => opt.name === "quality");
-
-        const attachmentId = imageOption?.value;
-        const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
-        const format = formatOption?.value;
-        const quality = qualityOption ? Number(qualityOption.value) : 85;
-
-        const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-        const interactionToken = interaction.token;
-
-        waitUntil(
-          (async () => {
-            try {
-              const convertResult = await handleConvertCommand(user, attachment, { format, quality });
-              await patchDiscordOriginalMessage(applicationId, interactionToken, convertResult);
-            } catch (err) {
-              console.error("Background Convert processing error:", err);
-            }
-          })()
-        );
-
-        return NextResponse.json({ type: 5 });
-      }
-
-      case "gift": {
-        const options = interaction.data?.options || [];
-        const userOption = options.find((opt: any) => opt.name === "user" || opt.name === "target");
-        const amountOption = options.find((opt: any) => opt.name === "amount");
-        const resourceOption = options.find((opt: any) => opt.name === "resource");
-        const messageOption = options.find((opt: any) => opt.name === "message");
-
-        const targetDiscordId = userOption?.value;
-        const amount = Number(amountOption?.value || 0);
-        const resource = (resourceOption?.value as "money" | "limit") || "money";
-        const message = messageOption?.value;
-
-        const response = await handleGiftCommand(
-          discordUserId,
-          targetDiscordId,
-          amount,
-          resource,
-          message
-        );
-        return NextResponse.json(response);
-      }
-
-      default: {
-        return NextResponse.json({
-          type: 4,
-          data: { content: `❌ Unknown command: \`/${commandName}\`` },
-        });
-      }
+    } catch (cmdErr) {
+      console.error(`Unexpected command error for /${commandName}:`, cmdErr);
+      return NextResponse.json({
+        type: 4,
+        data: {
+          content: "😿 Ayaa mengalami sedikit kendala sistem. Silakan coba perintah beberapa saat lagi yaa~ 🌸",
+          flags: 64,
+        },
+      });
     }
   }
 
