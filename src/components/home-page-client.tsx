@@ -22,6 +22,7 @@ import {
   Palette,
   RefreshCw,
   History,
+  Send,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +103,7 @@ export function HomePageClient() {
                 </Badge>
                 <Badge variant="pink">
                   <Sparkles className="w-3.5 h-3.5 text-pink-600" />
-                  <span>v1.1.0 (Aesthetic &amp; Tools)</span>
+                  <span>v1.2.0 (Social &amp; Economy)</span>
                 </Badge>
               </div>
 
@@ -247,23 +248,39 @@ export function HomePageClient() {
               </p>
             </Card>
 
-            {/* Command 4: /claim */}
+            {/* Command 4: /gift */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-3">
+                <span className="bg-pink-600 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
+                  <Heart className="w-4 h-4 fill-white" /> /gift [user] [amount]
+                </span>
+                <Badge variant="pink">Kado Spesial 💕</Badge>
+              </div>
+              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                <Heart className="w-4 h-4 text-pink-500 fill-pink-400" /> Kirim Kado Manis ke Teman
+              </h3>
+              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
+                Kirim kado berupa uang jajan 💰 atau tiket limit 🎟️ langsung ke dompet temanmu
+                disertai kartu ucapan pesan manis! Saldo langsung terkirim secara instan dan aman.
+              </p>
+            </Card>
+
+            {/* Command 5: /claim */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
                   <Gift className="w-4 h-4" /> /claim
                 </span>
                 <Badge variant="pink">
-                  <Clock className="w-3 h-3 text-pink-600" /> Cooldown 24 Jam
+                  <Clock className="w-3 h-3 text-pink-600" /> Daily Streak Multiplier
                 </Badge>
               </div>
               <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-pink-500" /> Ambil Hadiah Uang Jajan Harian
+                <Gift className="w-4 h-4 text-pink-500" /> Hadiah Harian &amp; Streak Bonus
               </h3>
               <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Dapatkan <strong>+1,000 Money</strong> dan <strong>+5 Tiket Limit HD</strong> gratis
-                setiap hari! Jika belum 24 jam, Ayaa Bot akan memberi tahu sisa waktu cooldown kamu
-                secara presisi.
+                Klaim berturut-turut setiap hari untuk melipatgandakan hadiahmu! Mulai dari
+                <strong> +1,000 Money</strong> di Hari 1 hingga <strong>+3,000 Money &amp; +8 Tiket HD</strong> di Hari 7+!
               </p>
             </Card>
 
@@ -321,16 +338,64 @@ export function HomePageClient() {
           </div>
 
           <div className="space-y-6">
-            {/* Version 1.1.0 */}
-            <Card className="p-7 sm:p-8 relative overflow-hidden border-2 border-pink-300/80 bg-gradient-to-br from-white/95 via-pink-50/50 to-pink-100/40">
+            {/* Version 1.2.0 */}
+            <Card className="p-7 sm:p-8 relative overflow-hidden border-2 border-pink-400 bg-gradient-to-br from-white/95 via-pink-50/60 to-pink-100/50 shadow-lg shadow-pink-500/10">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-200/70 mb-5">
                 <div className="flex items-center gap-2.5">
-                  <span className="bg-gradient-to-r from-pink-500 to-pink-600 text-white font-black text-sm px-3.5 py-1 rounded-full shadow-sm shadow-pink-500/25">
+                  <span className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-sm px-3.5 py-1 rounded-full shadow-sm shadow-pink-500/25">
+                    v1.2.0
+                  </span>
+                  <Badge variant="pink" className="border-pink-300">
+                    <Sparkles className="w-3.5 h-3.5 text-pink-600" />
+                    <span>Versi Terbaru • Social &amp; Economy Special</span>
+                  </Badge>
+                </div>
+                <span className="text-xs sm:text-sm text-pink-700 font-bold bg-pink-100 px-3 py-1 rounded-full">
+                  September 2026
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Heart className="w-5 h-5 fill-pink-500 text-pink-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Fitur Kirim Kado Manis (/gift)
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Kirim kado koin 💰 atau tiket limit 🎟️ ke teman spesialmu dengan ucapan manis khusus, diproses secara instan &amp; aman.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Gift className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Daily Claim Streak &amp; Multiplier Hadiah
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Sistem streak berturut-turut! Hadiah bertambah banyak tiap hari dari +1.000 Money (Hari 1) hingga +3.000 Money &amp; +8 Tiket HD (Hari 7+).
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Version 1.1.0 */}
+            <Card className="p-7 sm:p-8 relative overflow-hidden border border-pink-200/80 bg-white/80">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-200/70 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="bg-pink-300 text-pink-900 font-black text-sm px-3.5 py-1 rounded-full">
                     v1.1.0
                   </span>
                   <Badge variant="pink" className="border-pink-300">
                     <Sparkles className="w-3.5 h-3.5 text-pink-600" />
-                    <span>Versi Terbaru • Aesthetic &amp; Tools Update</span>
+                    <span>Aesthetic, Tools &amp; Cron Update</span>
                   </Badge>
                 </div>
                 <span className="text-xs sm:text-sm text-pink-700 font-bold bg-pink-100/80 px-3 py-1 rounded-full">

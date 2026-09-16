@@ -8,6 +8,7 @@ import { handleClaimCommand } from "@/commands/claim";
 import { handleHdCommand } from "@/commands/hd";
 import { handleFilterCommand } from "@/commands/filter";
 import { handleConvertCommand } from "@/commands/convert";
+import { handleGiftCommand } from "@/commands/gift";
 import { BOT_THEME } from "@/config/constants";
 
 export const maxDuration = 60; // Allow up to 60s execution for image processing
@@ -225,6 +226,28 @@ export async function POST(req: NextRequest) {
         );
 
         return NextResponse.json({ type: 5 });
+      }
+
+      case "gift": {
+        const options = interaction.data?.options || [];
+        const userOption = options.find((opt: any) => opt.name === "user" || opt.name === "target");
+        const amountOption = options.find((opt: any) => opt.name === "amount");
+        const resourceOption = options.find((opt: any) => opt.name === "resource");
+        const messageOption = options.find((opt: any) => opt.name === "message");
+
+        const targetDiscordId = userOption?.value;
+        const amount = Number(amountOption?.value || 0);
+        const resource = (resourceOption?.value as "money" | "limit") || "money";
+        const message = messageOption?.value;
+
+        const response = await handleGiftCommand(
+          discordUserId,
+          targetDiscordId,
+          amount,
+          resource,
+          message
+        );
+        return NextResponse.json(response);
       }
 
       default: {

@@ -38,13 +38,23 @@ export function handleHelpCommand() {
               inline: false,
             },
             {
-              name: "🎁 `/claim`",
-              value: "Ambil uang jajan harian kamu (**+1,000 Money** & **+5 Limit**) 🌸\n*Bisa di-claim setiap 24 jam sekali yaa~*",
+              name: "🎁 `/gift [user] [amount] (resource) (message)`",
+              value:
+                "Kirim kado manis koin atau tiket limit ke temanmu! 💕\n" +
+                "• Contoh: `/gift user:@Ayaa amount:500 message:Buat jajan boba 🧋`",
+              inline: false,
+            },
+            {
+              name: "🌟 `/claim` (Daily Streak Multiplier)",
+              value:
+                "Ambil hadiah harianmu! Dapatkan bonus multiplier beruntun:\n" +
+                "• Hari 1: `+1.000 💰 + 5 🎟️` ➔ Hari 7+: `+3.000 💰 + 8 🎟️` 👑\n" +
+                "*Klaim setiap 24-48 jam untuk menjaga streak kamu tetap aktif!*",
               inline: false,
             },
             {
               name: "👛 `/balance`",
-              value: "Cek isi dompet & sisa tiket limit kamu 🎀",
+              value: "Cek isi dompet, sisa tiket limit & streak harianmu 🎀\n*Dilengkapi tombol interaktif langsung!*",
               inline: false,
             },
             {
@@ -57,7 +67,7 @@ export function handleHelpCommand() {
             url: BOT_THEME.BANNER_URL,
           },
           footer: {
-            text: "Ayaa Bot 🌸 • v1.1.0 • Made with lots of love 💕",
+            text: "Ayaa Bot 🌸 • v1.2.0 • Made with lots of love 💕",
           },
         },
       ],

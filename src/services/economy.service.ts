@@ -14,11 +14,25 @@ export async function getUserByDiscordId(discordId: string): Promise<User | null
   return result.length > 0 ? result[0] : null;
 }
 
+export function getStreakReward(streak: number): { money: number; limit: number; isBonus: boolean } {
+  if (streak >= 7) return { money: 3000, limit: 8, isBonus: true };
+  if (streak === 6) return { money: 2400, limit: 7, isBonus: true };
+  if (streak === 5) return { money: 2000, limit: 7, isBonus: true };
+  if (streak === 4) return { money: 1700, limit: 6, isBonus: true };
+  if (streak === 3) return { money: 1500, limit: 6, isBonus: true };
+  if (streak === 2) return { money: 1200, limit: 5, isBonus: true };
+  return { money: 1000, limit: 5, isBonus: false };
+}
+
 export interface ClaimResult {
   success: boolean;
   user?: User;
   alreadyClaimed?: boolean;
   remainingCooldown?: string;
+  streak?: number;
+  rewardMoney?: number;
+  rewardLimit?: number;
+  isBonus?: boolean;
   error?: string;
 }
 
@@ -34,18 +48,34 @@ export async function claimDailyReward(discordId: string): Promise<ClaimResult> 
       success: false,
       alreadyClaimed: true,
       remainingCooldown: cooldown.formattedRemaining,
+      streak: user.claimStreak || 0,
     };
   }
 
   const now = new Date();
+  let newStreak = 1;
+  if (user.lastClaimAt) {
+    const elapsedMs = now.getTime() - new Date(user.lastClaimAt).getTime();
+    const elapsedHours = elapsedMs / (1000 * 60 * 60);
+    // Consecutive day claim window: between 24h and 48h
+    if (elapsedHours >= 24 && elapsedHours <= 48) {
+      newStreak = (user.claimStreak || 0) + 1;
+    } else {
+      // Missed more than 48 hours: streak resets to 1
+      newStreak = 1;
+    }
+  }
 
-  // Atomically update user balance and insert transaction
+  const reward = getStreakReward(newStreak);
+
+  // Atomically update user balance, streak and insert transaction
   const updatedUser = await db.transaction(async (tx) => {
     const [updated] = await tx
       .update(users)
       .set({
-        money: sql`${users.money} + ${ECONOMY.CLAIM_MONEY}`,
-        limitCount: sql`${users.limitCount} + ${ECONOMY.CLAIM_LIMIT}`,
+        money: sql`${users.money} + ${reward.money}`,
+        limitCount: sql`${users.limitCount} + ${reward.limit}`,
+        claimStreak: newStreak,
         lastClaimAt: now,
         updatedAt: now,
       })
@@ -55,9 +85,9 @@ export async function claimDailyReward(discordId: string): Promise<ClaimResult> 
     await tx.insert(transactions).values({
       userId: user.id,
       type: "CLAIM",
-      moneyChange: ECONOMY.CLAIM_MONEY,
-      limitChange: ECONOMY.CLAIM_LIMIT,
-      description: "Daily reward claim",
+      moneyChange: reward.money,
+      limitChange: reward.limit,
+      description: `Daily claim (Streak Hari ke-${newStreak})`,
       createdAt: now,
     });
 
@@ -67,6 +97,10 @@ export async function claimDailyReward(discordId: string): Promise<ClaimResult> 
   return {
     success: true,
     user: updatedUser,
+    streak: newStreak,
+    rewardMoney: reward.money,
+    rewardLimit: reward.limit,
+    isBonus: reward.isBonus,
   };
 }
 
@@ -251,4 +285,110 @@ export async function getUsersReadyForClaim(): Promise<User[]> {
     .select()
     .from(users)
     .where(or(isNull(users.lastClaimAt), lte(users.lastClaimAt, threshold)));
+}
+
+export interface GiftResult {
+  success: boolean;
+  sender?: User;
+  receiver?: User;
+  amount?: number;
+  resource?: "money" | "limit";
+  message?: string;
+  error?: string;
+}
+
+export async function transferGift(
+  senderDiscordId: string,
+  targetDiscordId: string,
+  amount: number,
+  resource: "money" | "limit" = "money",
+  message?: string
+): Promise<GiftResult> {
+  if (amount <= 0) {
+    return { success: false, error: "Jumlah kado harus lebih dari 0 yaa manis! 🎀" };
+  }
+
+  if (senderDiscordId === targetDiscordId) {
+    return { success: false, error: "Kamu tidak bisa mengirim kado ke diri sendiri yaa~ 🥺💕" };
+  }
+
+  const sender = await getUserByDiscordId(senderDiscordId);
+  if (!sender) {
+    return { success: false, error: "Akun kamu belum terdaftar di whitelist." };
+  }
+
+  const receiver = await getUserByDiscordId(targetDiscordId);
+  if (!receiver) {
+    return { success: false, error: "Pengguna tujuan belum terdaftar di whitelist Ayaa Bot yaa~ 🥺" };
+  }
+
+  if (resource === "money" && sender.money < amount) {
+    return {
+      success: false,
+      error: `Saldo uang jajan kamu tidak cukup. Kamu punya **${sender.money.toLocaleString("id-ID")} Money**, tapi mau kirim **${amount.toLocaleString("id-ID")} Money**. 👛`,
+    };
+  }
+
+  if (resource === "limit" && sender.limitCount < amount) {
+    return {
+      success: false,
+      error: `Tiket limit kamu tidak cukup. Kamu punya **${sender.limitCount} Limit**, tapi mau kirim **${amount} Limit**. 🎟️`,
+    };
+  }
+
+  const now = new Date();
+  const cleanMsg = message && message.trim().length > 0 ? message.trim() : "Kado manis untukmu! 🌸";
+
+  const { updatedSender, updatedReceiver } = await db.transaction(async (tx) => {
+    const [uSender] = await tx
+      .update(users)
+      .set({
+        money: resource === "money" ? sql`${users.money} - ${amount}` : users.money,
+        limitCount: resource === "limit" ? sql`${users.limitCount} - ${amount}` : users.limitCount,
+        updatedAt: now,
+      })
+      .where(eq(users.id, sender.id))
+      .returning();
+
+    const [uReceiver] = await tx
+      .update(users)
+      .set({
+        money: resource === "money" ? sql`${users.money} + ${amount}` : users.money,
+        limitCount: resource === "limit" ? sql`${users.limitCount} + ${amount}` : users.limitCount,
+        updatedAt: now,
+      })
+      .where(eq(users.id, receiver.id))
+      .returning();
+
+    // Log for sender
+    await tx.insert(transactions).values({
+      userId: sender.id,
+      type: "GIFT_SENT",
+      moneyChange: resource === "money" ? -amount : 0,
+      limitChange: resource === "limit" ? -amount : 0,
+      description: `Kirim kado untuk @${receiver.username || receiver.discordId}: "${cleanMsg}"`,
+      createdAt: now,
+    });
+
+    // Log for receiver
+    await tx.insert(transactions).values({
+      userId: receiver.id,
+      type: "GIFT_RECEIVED",
+      moneyChange: resource === "money" ? amount : 0,
+      limitChange: resource === "limit" ? amount : 0,
+      description: `Terima kado dari @${sender.username || sender.discordId}: "${cleanMsg}"`,
+      createdAt: now,
+    });
+
+    return { updatedSender: uSender, updatedReceiver: uReceiver };
+  });
+
+  return {
+    success: true,
+    sender: updatedSender,
+    receiver: updatedReceiver,
+    amount,
+    resource,
+    message: cleanMsg,
+  };
 }

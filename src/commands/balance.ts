@@ -31,7 +31,12 @@ export function handleBalanceCommand(user: User) {
               inline: true,
             },
             {
-              name: "🎁 Daily Claim",
+              name: "🔥 Daily Streak",
+              value: `**${user.claimStreak || 0} Hari**`,
+              inline: true,
+            },
+            {
+              name: "🎁 Status Claim",
               value: `**${claimStatus}**`,
               inline: true,
             },

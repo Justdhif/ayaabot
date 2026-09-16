@@ -101,6 +101,40 @@ const commands = [
     ],
   },
   {
+    name: "gift",
+    description: "Kirim kado koin atau tiket ke teman spesialmu dengan ucapan manis 🎁",
+    options: [
+      {
+        name: "user",
+        description: "Teman yang ingin kamu beri kado manis",
+        type: 6, // USER
+        required: true,
+      },
+      {
+        name: "amount",
+        description: "Jumlah koin atau tiket yang ingin dikirim (minimal 1)",
+        type: 4, // INTEGER
+        required: true,
+      },
+      {
+        name: "resource",
+        description: "Jenis kado yang ingin kamu kirim (Default: Money)",
+        type: 3, // STRING
+        required: false,
+        choices: [
+          { name: "Money (Uang Jajan 💰)", value: "money" },
+          { name: "Limit (Tiket HD 🎟️)", value: "limit" },
+        ],
+      },
+      {
+        name: "message",
+        description: "Pesan atau ucapan manis spesial (opsional)",
+        type: 3, // STRING
+        required: false,
+      },
+    ],
+  },
+  {
     name: "help",
     description: "Tampilkan menu panduan imut Ayaa Bot~ 🐾",
   },

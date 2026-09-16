@@ -10,6 +10,7 @@ export const users = pgTable(
     limitCount: integer("limit_count").notNull().default(0),
     lastClaimAt: timestamp("last_claim_at", { mode: "date", withTimezone: true }),
     lastHdAt: timestamp("last_hd_at", { mode: "date", withTimezone: true }),
+    claimStreak: integer("claim_streak").notNull().default(0),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).notNull().defaultNow(),
   },
