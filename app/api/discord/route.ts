@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyKey } from "discord-interactions";
+import { waitUntil } from "@vercel/functions";
 import { getUserByDiscordId } from "@/services/economy.service";
 import { handleHelpCommand } from "@/commands/help";
 import { handleBalanceCommand } from "@/commands/balance";
 import { handleClaimCommand } from "@/commands/claim";
 import { handleHdCommand } from "@/commands/hd";
+
+export const maxDuration = 60; // Allow up to 60s execution for image processing
 
 export async function POST(req: NextRequest) {
   const signature =
@@ -28,7 +31,6 @@ export async function POST(req: NextRequest) {
       return new NextResponse("Invalid signature", { status: 401 });
     }
   } else {
-    // If running in development without public key configured, log warning
     if (process.env.NODE_ENV === "production") {
       return new NextResponse("DISCORD_PUBLIC_KEY is not configured", { status: 500 });
     }
@@ -93,24 +95,58 @@ export async function POST(req: NextRequest) {
         const attachmentId = imageOption?.value;
         const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
 
-        const hdResult = await handleHdCommand(user, attachment);
+        const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+        const interactionToken = interaction.token;
 
-        if (hdResult.fileAttachment) {
-          const formData = new FormData();
-          formData.append("payload_json", JSON.stringify(hdResult.responsePayload));
+        // Process HD upscaling asynchronously to avoid Discord's 3-second timeout limit
+        waitUntil(
+          (async () => {
+            try {
+              const hdResult = await handleHdCommand(user, attachment);
+              const webhookUrl = `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`;
+              const messageData = hdResult.responsePayload.data || hdResult.responsePayload;
 
-          const fileBlob = new Blob([new Uint8Array(hdResult.fileAttachment.buffer)], {
-            type: hdResult.fileAttachment.contentType,
-          });
+              if (hdResult.fileAttachment) {
+                const formData = new FormData();
+                formData.append("payload_json", JSON.stringify(messageData));
 
-          formData.append("files[0]", fileBlob, hdResult.fileAttachment.filename);
+                const fileBlob = new Blob([new Uint8Array(hdResult.fileAttachment.buffer)], {
+                  type: hdResult.fileAttachment.contentType,
+                });
 
-          return new Response(formData, {
-            status: 200,
-          });
-        }
+                formData.append("files[0]", fileBlob, hdResult.fileAttachment.filename);
 
-        return NextResponse.json(hdResult.responsePayload);
+                const patchRes = await fetch(webhookUrl, {
+                  method: "PATCH",
+                  body: formData,
+                });
+
+                if (!patchRes.ok) {
+                  const errorText = await patchRes.text();
+                  console.error("Failed to patch message with file:", patchRes.status, errorText);
+                }
+              } else {
+                const patchRes = await fetch(webhookUrl, {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(messageData),
+                });
+
+                if (!patchRes.ok) {
+                  const errorText = await patchRes.text();
+                  console.error("Failed to patch message text:", patchRes.status, errorText);
+                }
+              }
+            } catch (err) {
+              console.error("Background HD processing error:", err);
+            }
+          })()
+        );
+
+        // Immediate deferred response: Tells Discord to show "AyaaBot is thinking..."
+        return NextResponse.json({ type: 5 });
       }
 
       default: {

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
+    "@vercel/functions": "^3.9.8",
     "discord-api-types": "^0.37.119",
     "discord-interactions": "^4.1.1",
     "dotenv": "^16.4.7",
