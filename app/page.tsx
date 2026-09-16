@@ -589,10 +589,10 @@ export default function HomePage() {
               >
                 <img
                   src="/avatar.jpeg"
-                  alt="Ayaa Profile"
+                  alt="Ayaa Asli Profile"
                   style={{
-                    width: "68px",
-                    height: "68px",
+                    width: "72px",
+                    height: "72px",
                     borderRadius: "50%",
                     objectFit: "cover",
                     border: "3px solid #ff758f",
@@ -619,7 +619,7 @@ export default function HomePage() {
                       fontWeight: 700,
                     }}
                   >
-                    @ayaabot • AyaaBot
+                    @acyash_ • Profil Asli
                   </div>
                   <div
                     style={{
@@ -629,16 +629,42 @@ export default function HomePage() {
                       marginTop: "2px",
                     }}
                   >
-                    Host &amp; Official Muse of Ayaa Bot
+                    Inspiration &amp; Official Muse of Ayaa Bot 🌸
                   </div>
                 </div>
               </div>
 
-              <p style={{ color: "#800f2f", fontSize: "0.95rem", lineHeight: "1.5" }}>
-                Didedikasikan dan didukung penuh oleh akun <strong>Ayaa</strong> di server{" "}
-                <strong>ayaa room</strong> sebagai inspirasi utama hadirnya bot ini. Menemani harimu
-                bikin foto jadi makin manis dan tajam!
+              <p style={{ color: "#800f2f", fontSize: "0.95rem", lineHeight: "1.5", marginBottom: "16px" }}>
+                Didedikasikan dan didukung penuh oleh <strong>Ayaa asli (@acyash_)</strong> sebagai
+                sosok inspirasi utama di balik hadirnya Ayaa Bot di server <strong>ayaa room</strong>.
+                Menemani harimu bikin foto jadi makin manis dan tajam! 💕
               </p>
+
+              <div>
+                <a
+                  href="https://www.tiktok.com/@acyash_?_r=1&_t=ZS-99lvQg26geC"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-primary"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 22px",
+                    fontSize: "0.92rem",
+                    textDecoration: "none",
+                    background: "linear-gradient(135deg, #111111 0%, #2b2b2b 100%)",
+                    color: "white",
+                    boxShadow: "0 6px 18px rgba(0, 0, 0, 0.25)",
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.5 6.3 6.3 0 0 0 1.86-4.5V8.84a8.16 8.16 0 0 0 4.91 1.63v-3.45a4.85 4.85 0 0 1-1-.33z" />
+                  </svg>
+                  <span>Kunjungi TikTok @acyash_</span>
+                  <ExternalLink size={14} />
+                </a>
+              </div>
             </div>
           </div>
         </div>
