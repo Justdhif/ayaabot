@@ -7,8 +7,12 @@ import { handleClaimCommand } from "@/commands/claim";
 import { handleHdCommand } from "@/commands/hd";
 
 export async function POST(req: NextRequest) {
-  const signature = req.headers.get("X-Signature-Ed25519");
-  const timestamp = req.headers.get("X-Signature-Timestamp");
+  const signature =
+    req.headers.get("x-signature-ed25519") ||
+    req.headers.get("X-Signature-Ed25519");
+  const timestamp =
+    req.headers.get("x-signature-timestamp") ||
+    req.headers.get("X-Signature-Timestamp");
   const rawBody = await req.text();
 
   const publicKey = process.env.DISCORD_PUBLIC_KEY;
@@ -19,7 +23,7 @@ export async function POST(req: NextRequest) {
       return new NextResponse("Missing signature headers", { status: 401 });
     }
 
-    const isValid = verifyKey(rawBody, signature, timestamp, publicKey);
+    const isValid = await verifyKey(rawBody, signature, timestamp, publicKey);
     if (!isValid) {
       return new NextResponse("Invalid signature", { status: 401 });
     }
