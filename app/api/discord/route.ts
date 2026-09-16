@@ -6,8 +6,56 @@ import { handleHelpCommand } from "@/commands/help";
 import { handleBalanceCommand } from "@/commands/balance";
 import { handleClaimCommand } from "@/commands/claim";
 import { handleHdCommand } from "@/commands/hd";
+import { handleFilterCommand } from "@/commands/filter";
+import { handleConvertCommand } from "@/commands/convert";
 
 export const maxDuration = 60; // Allow up to 60s execution for image processing
+
+async function patchDiscordOriginalMessage(
+  applicationId: string,
+  token: string,
+  result: {
+    responsePayload: any;
+    fileAttachment?: { buffer: Buffer; filename: string; contentType: string };
+  }
+) {
+  const webhookUrl = `https://discord.com/api/v10/webhooks/${applicationId}/${token}/messages/@original`;
+  const messageData = result.responsePayload.data || result.responsePayload;
+
+  if (result.fileAttachment) {
+    const formData = new FormData();
+    formData.append("payload_json", JSON.stringify(messageData));
+
+    const fileBlob = new Blob([new Uint8Array(result.fileAttachment.buffer)], {
+      type: result.fileAttachment.contentType,
+    });
+
+    formData.append("files[0]", fileBlob, result.fileAttachment.filename);
+
+    const patchRes = await fetch(webhookUrl, {
+      method: "PATCH",
+      body: formData,
+    });
+
+    if (!patchRes.ok) {
+      const errorText = await patchRes.text();
+      console.error("Failed to patch message with file:", patchRes.status, errorText);
+    }
+  } else {
+    const patchRes = await fetch(webhookUrl, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(messageData),
+    });
+
+    if (!patchRes.ok) {
+      const errorText = await patchRes.text();
+      console.error("Failed to patch message text:", patchRes.status, errorText);
+    }
+  }
+}
 
 export async function POST(req: NextRequest) {
   const signature =
@@ -99,60 +147,82 @@ export async function POST(req: NextRequest) {
       case "hd": {
         const options = interaction.data?.options || [];
         const imageOption = options.find((opt: any) => opt.name === "image");
+        const scaleOption = options.find((opt: any) => opt.name === "scale");
+        const modeOption = options.find((opt: any) => opt.name === "mode");
+
         const attachmentId = imageOption?.value;
         const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+        const scale = scaleOption ? Number(scaleOption.value) : 2;
+        const mode = modeOption ? (modeOption.value as "sharp" | "soft") : "sharp";
 
         const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
         const interactionToken = interaction.token;
 
-        // Process HD upscaling asynchronously to avoid Discord's 3-second timeout limit
         waitUntil(
           (async () => {
             try {
-              const hdResult = await handleHdCommand(user, attachment);
-              const webhookUrl = `https://discord.com/api/v10/webhooks/${applicationId}/${interactionToken}/messages/@original`;
-              const messageData = hdResult.responsePayload.data || hdResult.responsePayload;
-
-              if (hdResult.fileAttachment) {
-                const formData = new FormData();
-                formData.append("payload_json", JSON.stringify(messageData));
-
-                const fileBlob = new Blob([new Uint8Array(hdResult.fileAttachment.buffer)], {
-                  type: hdResult.fileAttachment.contentType,
-                });
-
-                formData.append("files[0]", fileBlob, hdResult.fileAttachment.filename);
-
-                const patchRes = await fetch(webhookUrl, {
-                  method: "PATCH",
-                  body: formData,
-                });
-
-                if (!patchRes.ok) {
-                  const errorText = await patchRes.text();
-                  console.error("Failed to patch message with file:", patchRes.status, errorText);
-                }
-              } else {
-                const patchRes = await fetch(webhookUrl, {
-                  method: "PATCH",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(messageData),
-                });
-
-                if (!patchRes.ok) {
-                  const errorText = await patchRes.text();
-                  console.error("Failed to patch message text:", patchRes.status, errorText);
-                }
-              }
+              const hdResult = await handleHdCommand(user, attachment, { scale, mode });
+              await patchDiscordOriginalMessage(applicationId, interactionToken, hdResult);
             } catch (err) {
               console.error("Background HD processing error:", err);
             }
           })()
         );
 
-        // Immediate deferred response: Tells Discord to show "AyaaBot is thinking..."
+        return NextResponse.json({ type: 5 });
+      }
+
+      case "filter": {
+        const options = interaction.data?.options || [];
+        const imageOption = options.find((opt: any) => opt.name === "image");
+        const presetOption = options.find((opt: any) => opt.name === "preset");
+
+        const attachmentId = imageOption?.value;
+        const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+        const preset = presetOption?.value;
+
+        const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+        const interactionToken = interaction.token;
+
+        waitUntil(
+          (async () => {
+            try {
+              const filterResult = await handleFilterCommand(user, attachment, preset);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, filterResult);
+            } catch (err) {
+              console.error("Background Filter processing error:", err);
+            }
+          })()
+        );
+
+        return NextResponse.json({ type: 5 });
+      }
+
+      case "convert": {
+        const options = interaction.data?.options || [];
+        const imageOption = options.find((opt: any) => opt.name === "image");
+        const formatOption = options.find((opt: any) => opt.name === "format");
+        const qualityOption = options.find((opt: any) => opt.name === "quality");
+
+        const attachmentId = imageOption?.value;
+        const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+        const format = formatOption?.value;
+        const quality = qualityOption ? Number(qualityOption.value) : 85;
+
+        const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+        const interactionToken = interaction.token;
+
+        waitUntil(
+          (async () => {
+            try {
+              const convertResult = await handleConvertCommand(user, attachment, { format, quality });
+              await patchDiscordOriginalMessage(applicationId, interactionToken, convertResult);
+            } catch (err) {
+              console.error("Background Convert processing error:", err);
+            }
+          })()
+        );
+
         return NextResponse.json({ type: 5 });
       }
 

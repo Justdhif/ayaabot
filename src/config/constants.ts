@@ -2,8 +2,16 @@ export const ECONOMY = {
   CLAIM_MONEY: 1000,
   CLAIM_LIMIT: 5,
 
+  HD_COST_MONEY_2X: 100,
+  HD_COST_LIMIT_2X: 1,
+  HD_COST_MONEY_4X: 200,
+  HD_COST_LIMIT_4X: 2,
+  // Backward compatibility alias:
   HD_COST_MONEY: 100,
   HD_COST_LIMIT: 1,
+
+  FILTER_COST_MONEY: 50,
+  CONVERT_COST_MONEY: 25,
 
   CLAIM_COOLDOWN_HOURS: 24,
   HD_COOLDOWN_SECONDS: 15,
@@ -14,7 +22,25 @@ export const IMAGE_CONFIG = {
   ALLOWED_MIME_TYPES: ["image/png", "image/jpeg", "image/webp"],
   ALLOWED_EXTENSIONS: ["png", "jpg", "jpeg", "webp"],
   DEFAULT_SCALE: 2,
+  MAX_OUTPUT_DIMENSION: 4096, // Maximum width/height to prevent serverless OOM
 } as const;
+
+export const FILTER_PRESETS = {
+  PINK_GLOW: "pink_glow",
+  VINTAGE_WARM: "vintage_warm",
+  BW_DREAMY: "bw_dreamy",
+  ANIME_POP: "anime_pop",
+} as const;
+
+export type FilterPresetKey = (typeof FILTER_PRESETS)[keyof typeof FILTER_PRESETS];
+
+export const CONVERT_FORMATS = {
+  PNG: "png",
+  JPG: "jpg",
+  WEBP: "webp",
+} as const;
+
+export type ConvertFormatKey = (typeof CONVERT_FORMATS)[keyof typeof CONVERT_FORMATS];
 
 export const BOT_THEME = {
   NAME: "Ayaa Bot",

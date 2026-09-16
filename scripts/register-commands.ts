@@ -12,13 +12,91 @@ const commands = [
   },
   {
     name: "hd",
-    description: "Sulap fotomu jadi 2x lebih jernih & HD (biaya: 100 Money + 1 Limit) ✨",
+    description: "Sulap foto jadi 2x / 4x lebih jernih & tajam ✨",
     options: [
       {
         name: "image",
         description: "Foto yang mau disulap (PNG, JPG, JPEG, WEBP, maks 10 MB)",
-        type: 11, // ATTACHMENT type in Discord API
+        type: 11, // ATTACHMENT
         required: true,
+      },
+      {
+        name: "scale",
+        description: "Pilihan skala pembesaran (Default: 2x)",
+        type: 4, // INTEGER
+        required: false,
+        choices: [
+          { name: "2x (Standar — 100 💰 + 1 🎟️)", value: 2 },
+          { name: "4x (Ultra HD — 200 💰 + 2 🎟️)", value: 4 },
+        ],
+      },
+      {
+        name: "mode",
+        description: "Karakter hasil sulap foto (Default: Sharp)",
+        type: 3, // STRING
+        required: false,
+        choices: [
+          { name: "Sharp (Detail & Tajam)", value: "sharp" },
+          { name: "Soft (Halus & Mulus)", value: "soft" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "filter",
+    description: "Beri filter warna manis & aesthetic pada fotomu (50 💰) 🌸",
+    options: [
+      {
+        name: "image",
+        description: "Foto yang mau diberi filter (maks 10 MB)",
+        type: 11, // ATTACHMENT
+        required: true,
+      },
+      {
+        name: "preset",
+        description: "Pilihan preset filter estetik",
+        type: 3, // STRING
+        required: true,
+        choices: [
+          { name: "Soft Pink Glow 🌸 (Aura pink lembut & dreamy)", value: "pink_glow" },
+          { name: "Vintage Warm ☕ (Nuansa klasik hangat & nostalgic)", value: "vintage_warm" },
+          { name: "B&W Dreamy 🖤 (Hitam putih kontras elegan)", value: "bw_dreamy" },
+          { name: "Anime Pop 🎨 (Warna cerah, vibrant & tajam)", value: "anime_pop" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "convert",
+    description: "Ubah format foto & kompres ukuran file (25 💰) 📦",
+    options: [
+      {
+        name: "image",
+        description: "Foto yang mau diubah format atau dikompres (maks 10 MB)",
+        type: 11, // ATTACHMENT
+        required: true,
+      },
+      {
+        name: "format",
+        description: "Target format file gambar",
+        type: 3, // STRING
+        required: true,
+        choices: [
+          { name: "WebP (Ultra Efisien & Modern)", value: "webp" },
+          { name: "PNG (Lossless & Transparan)", value: "png" },
+          { name: "JPG / JPEG (Standar Ringan)", value: "jpg" },
+        ],
+      },
+      {
+        name: "quality",
+        description: "Kualitas kompresi gambar (Default: 80%)",
+        type: 4, // INTEGER
+        required: false,
+        choices: [
+          { name: "100% (Kualitas Penuh / Maksimal)", value: 100 },
+          { name: "80% (Seimbang — Rekomendasi)", value: 80 },
+          { name: "60% (Kompresi Ekstra Hemat)", value: 60 },
+        ],
       },
     ],
   },

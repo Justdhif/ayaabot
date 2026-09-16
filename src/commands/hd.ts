@@ -28,8 +28,15 @@ export interface HdExecutionResult {
 
 export async function handleHdCommand(
   user: User,
-  attachment?: AttachmentOption
+  attachment?: AttachmentOption,
+  options?: { scale?: number; mode?: "sharp" | "soft" }
 ): Promise<HdExecutionResult> {
+  const scale = options?.scale === 4 ? 4 : 2;
+  const mode = options?.mode === "soft" ? "soft" : "sharp";
+
+  const costMoney = scale === 4 ? ECONOMY.HD_COST_MONEY_4X : ECONOMY.HD_COST_MONEY_2X;
+  const costLimit = scale === 4 ? ECONOMY.HD_COST_LIMIT_4X : ECONOMY.HD_COST_LIMIT_2X;
+
   // 1. Check Rate Limit (15 seconds per user)
   const cooldown = checkHdCooldown(user.lastHdAt);
   if (!cooldown.canExecute) {
@@ -50,7 +57,7 @@ export async function handleHdCommand(
   }
 
   // 2. Check Resources (Money & Limit)
-  if (user.money < ECONOMY.HD_COST_MONEY) {
+  if (user.money < costMoney) {
     return {
       responsePayload: {
         type: 4,
@@ -60,7 +67,7 @@ export async function handleHdCommand(
               title: "👛 Uang Jajan Kamu Belum Cukup Nih~ 🥺",
               color: BOT_THEME.COLOR_ROSE,
               description:
-                `Untuk menyulap foto jadi HD butuh **${ECONOMY.HD_COST_MONEY} Money**, tapi saldo kamu saat ini baru **${user.money.toLocaleString("id-ID")}**.\n\n` +
+                `Untuk menyulap foto jadi HD (${scale}×) butuh **${costMoney} Money**, tapi saldo kamu saat ini baru **${user.money.toLocaleString("id-ID")}**.\n\n` +
                 "Yuk ambil uang jajan dulu pakai perintah **`/claim`** yaa! 🎀💕",
             },
           ],
@@ -69,17 +76,17 @@ export async function handleHdCommand(
     };
   }
 
-  if (user.limitCount < ECONOMY.HD_COST_LIMIT) {
+  if (user.limitCount < costLimit) {
     return {
       responsePayload: {
         type: 4,
         data: {
           embeds: [
             {
-              title: "🎟️ Tiket Limit Kamu Sudah Habis~ 🥺",
+              title: "🎟️ Tiket Limit Kamu Kurang Nih~ 🥺",
               color: BOT_THEME.COLOR_ROSE,
               description:
-                `Untuk proses HD butuh **${ECONOMY.HD_COST_LIMIT} Limit**, tapi sisa tiket kamu sekarang **0**.\n\n` +
+                `Untuk proses HD (${scale}×) butuh **${costLimit} Tiket Limit**, tapi tiket kamu sekarang **${user.limitCount}**.\n\n` +
                 "Yuk ambil jatah tiket harian pakai perintah **`/claim`** yaa manis~ 💕",
             },
           ],
@@ -137,6 +144,8 @@ export async function handleHdCommand(
     imageBuffer: validation.buffer,
     originalWidth: validation.width,
     originalHeight: validation.height,
+    scale,
+    mode,
   });
 
   // 6. Handle Upscale Failure (No resources deducted)
@@ -172,7 +181,7 @@ export async function handleHdCommand(
   }
 
   // 7. Upscale Success -> Deduct Money & Limit atomically
-  const deductResult = await deductForHd(user.id);
+  const deductResult = await deductForHd(user.id, scale);
   if (!deductResult.success || !deductResult.user) {
     return {
       responsePayload: {
@@ -205,7 +214,7 @@ export async function handleHdCommand(
     processingTimeMs: upscaleResult.processingTimeMs,
   });
 
-  const outputFilename = `ayaabot_2x_${attachment.filename || "upscaled.png"}`;
+  const outputFilename = `ayaabot_${scale}x_${mode}_${attachment.filename || "upscaled.png"}`;
 
   return {
     responsePayload: {
@@ -213,16 +222,17 @@ export async function handleHdCommand(
       data: {
         embeds: [
           {
-            title: "✨ Tadaa! Fotonya Udah Disulap Jadi Makin HD~ 🌸",
+            title: `✨ Tadaa! Fotonya Disulap Jadi ${scale}× HD~ 🌸`,
             color: BOT_THEME.COLOR_PINK,
             description:
-              "Yeay! Gambarmu udah Ayaa bikin jadi **2× lebih jernih dan tajam** lhoo! Gemas banget kan hasilnya~ 💖\n\n" +
+              `Yeay! Gambarmu udah Ayaa bikin jadi **${scale}× lebih jernih dan tajam** lhoo! Gemas banget kan hasilnya~ 💖\n\n` +
               `📐 **Resolusi Awal:** \`${validation.width} × ${validation.height} px\`\n` +
-              `✨ **Resolusi HD (2×):** \`${upscaleResult.outputWidth} × ${upscaleResult.outputHeight} px\`\n` +
+              `✨ **Resolusi HD (${scale}×):** \`${upscaleResult.outputWidth} × ${upscaleResult.outputHeight} px\`\n` +
+              `🎨 **Mode:** \`${mode === "sharp" ? "Sharp (Detail & Tajam)" : "Soft (Halus & Mulus)"}\`\n` +
               `⚡ **Waktu Sulap:** \`${(upscaleResult.processingTimeMs / 1000).toFixed(2)} detik\`\n\n` +
               "**Sisa Saldo Kamu:**\n" +
-              `💰 Uang Jajan: **${updatedUser.money.toLocaleString("id-ID")} Money** (-100)\n` +
-              `🎟️ Tiket Limit: **${updatedUser.limitCount.toLocaleString("id-ID")} Tiket** (-1)`,
+              `💰 Uang Jajan: **${updatedUser.money.toLocaleString("id-ID")} Money** (-${costMoney})\n` +
+              `🎟️ Tiket Limit: **${updatedUser.limitCount.toLocaleString("id-ID")} Tiket** (-${costLimit})`,
             image: {
               url: `attachment://${outputFilename}`,
             },

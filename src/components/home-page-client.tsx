@@ -19,6 +19,9 @@ import {
   ExternalLink,
   Code2,
   MessageCircle,
+  Palette,
+  RefreshCw,
+  History,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -99,7 +102,7 @@ export function HomePageClient() {
                 </Badge>
                 <Badge variant="pink">
                   <Sparkles className="w-3.5 h-3.5 text-pink-600" />
-                  <span>v1.0.0 (MVP)</span>
+                  <span>v1.1.0 (Aesthetic &amp; Tools)</span>
                 </Badge>
               </div>
 
@@ -194,21 +197,57 @@ export function HomePageClient() {
             <Card className="p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="bg-pink-600 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
-                  <ImageIcon className="w-4 h-4" /> /hd [image]
+                  <ImageIcon className="w-4 h-4" /> /hd [image] (scale) (mode)
                 </span>
-                <Badge variant="pink">Biaya: 100 💰 + 1 🎟️</Badge>
+                <Badge variant="pink">2×: 100 💰 • 4×: 200 💰</Badge>
               </div>
               <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4 text-pink-500" /> AI Image Upscaling 2×
+                <Sparkles className="w-4 h-4 text-pink-500" /> AI Image Upscaling (2× / 4×)
               </h3>
               <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
-                Kirim foto kamu (PNG, JPG, JPEG, WEBP maks 10 MB). Ayaa Bot akan langsung menyulap
-                fotomu jadi 2× lebih tajam, bebas pecah, dan makin estetik! Dilengkapi cooldown 15
-                detik.
+                Sulap fotomu jadi <strong>2× (Standar)</strong> atau <strong>4× (Ultra HD)</strong>!
+                Dilengkapi pilihan karakter mode <em>Sharp</em> untuk detail tajam atau <em>Soft</em> untuk
+                hasil halus alami. Cooldown 15 detik.
               </p>
             </Card>
 
-            {/* Command 2: /claim */}
+            {/* Command 2: /filter */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-3">
+                <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                  <Palette className="w-4 h-4" /> /filter [image] [preset]
+                </span>
+                <Badge variant="pink">Biaya: 50 💰</Badge>
+              </div>
+              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                <Palette className="w-4 h-4 text-pink-500" /> Aesthetic Photo Filters
+              </h3>
+              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
+                Beri sentuhan warna aesthetic manis pada fotomu dengan 4 preset instan:
+                <strong> Soft Pink Glow 🌸</strong>, <strong>Vintage Warm ☕</strong>,
+                <strong> B&amp;W Dreamy 🖤</strong>, dan <strong>Anime Pop 🎨</strong>. Hemat koin tanpa tiket!
+              </p>
+            </Card>
+
+            {/* Command 3: /convert */}
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-3">
+                <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                  <RefreshCw className="w-4 h-4" /> /convert [image] [format]
+                </span>
+                <Badge variant="pink">Biaya: 25 💰</Badge>
+              </div>
+              <h3 className="font-extrabold text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                <RefreshCw className="w-4 h-4 text-pink-500" /> Format Converter &amp; Compressor
+              </h3>
+              <p className="text-sm text-pink-800/90 font-medium leading-relaxed">
+                Ubah format gambar secara instan ke <strong>WebP</strong>, <strong>PNG</strong>, atau
+                <strong> JPG</strong> dengan opsi kualitas kompresi agar file foto kamu ringan dan muat
+                dikirim di Discord!
+              </p>
+            </Card>
+
+            {/* Command 4: /claim */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
@@ -228,7 +267,7 @@ export function HomePageClient() {
               </p>
             </Card>
 
-            {/* Command 3: /balance */}
+            {/* Command 5: /balance */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
@@ -245,7 +284,7 @@ export function HomePageClient() {
               </p>
             </Card>
 
-            {/* Command 4: /help */}
+            {/* Command 6: /help */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-3">
                 <span className="bg-pink-500 text-white px-3.5 py-1.5 rounded-xl font-extrabold text-sm font-mono flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
@@ -260,6 +299,178 @@ export function HomePageClient() {
                 Menampilkan menu bantuan lengkap dengan banner lucu Ayaa Bot, petunjuk penggunaan
                 masing-masing perintah, serta informasi versi bot.
               </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* 📜 CHANGELOG / INFO UPDATE */}
+      <section id="updates" className="pb-12">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <Badge variant="pink" className="mb-2">
+              <History className="w-3.5 h-3.5 text-pink-600" />
+              <span>Changelog &amp; Version History</span>
+            </Badge>
+            <h2 className="text-2xl sm:text-3xl font-black text-pink-950 mt-1">
+              Catatan Pembaruan Ayaa Bot
+            </h2>
+            <p className="text-sm sm:text-base text-pink-800/90 font-semibold mt-1">
+              Rangkuman fitur baru dan peningkatan manis yang dirilis di setiap versi:
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {/* Version 1.1.0 */}
+            <Card className="p-7 sm:p-8 relative overflow-hidden border-2 border-pink-300/80 bg-gradient-to-br from-white/95 via-pink-50/50 to-pink-100/40">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-200/70 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="bg-gradient-to-r from-pink-500 to-pink-600 text-white font-black text-sm px-3.5 py-1 rounded-full shadow-sm shadow-pink-500/25">
+                    v1.1.0
+                  </span>
+                  <Badge variant="pink" className="border-pink-300">
+                    <Sparkles className="w-3.5 h-3.5 text-pink-600" />
+                    <span>Versi Terbaru • Aesthetic &amp; Tools Update</span>
+                  </Badge>
+                </div>
+                <span className="text-xs sm:text-sm text-pink-700 font-bold bg-pink-100/80 px-3 py-1 rounded-full">
+                  September 2026
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white/80 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <ImageIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Opsi Skala (2× &amp; 4×) &amp; Mode Karakter di /hd
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Dukungan pembesaran <strong>2× (Standar)</strong> dan <strong>4× (Ultra HD)</strong> dengan pilihan mode <em>Sharp</em> (detail tajam ekstra) serta <em>Soft</em> (halus alami).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/80 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Palette className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Command Baru: /filter (Aesthetic Presets)
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      4 Preset estetik instan: <em>Soft Pink Glow 🌸, Vintage Warm ☕, B&amp;W Dreamy 🖤,</em> dan <em>Anime Pop 🎨</em> hanya 50 Money tanpa potong tiket.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/80 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <RefreshCw className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Command Baru: /convert (Format &amp; Compressor)
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Ubah format gambar ke WebP, PNG, atau JPG dengan opsi kualitas kompresi pintar hemat kuota untuk Discord.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/80 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Optimalisasi Serverless Vercel &amp; Asynchronous Response
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Eksekusi image processing di latar belakang menggunakan <code>waitUntil</code>, bebas timeout Discord 3 detik dan proteksi memori OOM.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Version 1.0.0 */}
+            <Card className="p-7 sm:p-8 border border-pink-200/70 bg-white/70">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-200/60 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="bg-pink-200 text-pink-800 font-black text-sm px-3.5 py-1 rounded-full">
+                    v1.0.0
+                  </span>
+                  <Badge variant="pink">
+                    <Flower2 className="w-3.5 h-3.5 text-pink-600" />
+                    <span>MVP Release (Peluncuran Perdana)</span>
+                  </Badge>
+                </div>
+                <span className="text-xs sm:text-sm text-pink-600 font-bold bg-pink-50 px-3 py-1 rounded-full">
+                  September 2026
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100/80 text-pink-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Core AI Image Upscaling (2× HD)
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Perintah <code>/hd</code> dengan algoritma Lanczos3 berkualitas tinggi untuk mempertajam foto langsung dari Discord.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100/80 text-pink-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <Gift className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Virtual Sweet Economy &amp; Daily Claim
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Sistem <code>/claim</code> uang jajan harian (+1.000 Money &amp; +5 Limit) dengan cooldown presisi 24 jam per user.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100/80 text-pink-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <Wallet className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Cek Dompet (/balance) &amp; Whitelist Keamanan
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Pemeriksaan saldo koin &amp; sisa tiket limit, terproteksi sistem private whitelist berbasis Neon PostgreSQL.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100/80 text-pink-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <HelpCircle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Menu Bantuan (/help) &amp; Landing Page Manis
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Embed panduan Discord interaktif dan landing page resmi bernuansa cute soft pastel pink.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </Card>
           </div>
         </div>

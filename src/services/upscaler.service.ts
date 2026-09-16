@@ -6,6 +6,7 @@ export interface UpscaleInput {
   originalWidth: number;
   originalHeight: number;
   scale?: number;
+  mode?: "sharp" | "soft";
 }
 
 export interface UpscaleOutput {
@@ -14,15 +15,26 @@ export interface UpscaleOutput {
   outputWidth?: number;
   outputHeight?: number;
   scale: number;
+  mode: "sharp" | "soft";
   processingTimeMs: number;
   error?: string;
 }
 
 export async function upscaleImage(input: UpscaleInput): Promise<UpscaleOutput> {
   const startTime = Date.now();
-  const scale = input.scale || IMAGE_CONFIG.DEFAULT_SCALE;
-  const targetWidth = Math.round(input.originalWidth * scale);
-  const targetHeight = Math.round(input.originalHeight * scale);
+  const scale = input.scale === 4 ? 4 : 2;
+  const mode = input.mode === "soft" ? "soft" : "sharp";
+
+  let targetWidth = Math.round(input.originalWidth * scale);
+  let targetHeight = Math.round(input.originalHeight * scale);
+
+  // Safety clamp to prevent OOM in serverless environment
+  const maxDim = IMAGE_CONFIG.MAX_OUTPUT_DIMENSION;
+  if (targetWidth > maxDim || targetHeight > maxDim) {
+    const ratio = Math.min(maxDim / targetWidth, maxDim / targetHeight);
+    targetWidth = Math.round(targetWidth * ratio);
+    targetHeight = Math.round(targetHeight * ratio);
+  }
 
   const apiUrl = process.env.UPSCALER_API_URL;
   const apiKey = process.env.UPSCALER_API_KEY;
@@ -30,7 +42,6 @@ export async function upscaleImage(input: UpscaleInput): Promise<UpscaleOutput> 
   // 1. If external API is configured, use it
   if (apiUrl && apiKey) {
     try {
-      // Send as multipart form or base64 depending on API contract
       const formData = new FormData();
       const blob = new Blob([new Uint8Array(input.imageBuffer)]);
       formData.append("image", blob, "image.png");
@@ -49,6 +60,7 @@ export async function upscaleImage(input: UpscaleInput): Promise<UpscaleOutput> 
         return {
           success: false,
           scale,
+          mode,
           processingTimeMs: Date.now() - startTime,
           error: `External upscaler error: ${res.status} ${errorText}`,
         };
@@ -63,28 +75,38 @@ export async function upscaleImage(input: UpscaleInput): Promise<UpscaleOutput> 
         outputWidth: metadata.width || targetWidth,
         outputHeight: metadata.height || targetHeight,
         scale,
+        mode,
         processingTimeMs: Date.now() - startTime,
       };
     } catch (err: any) {
       return {
         success: false,
         scale,
+        mode,
         processingTimeMs: Date.now() - startTime,
         error: err.message || "Failed to call external upscaler API.",
       };
     }
   }
 
-  // 2. Built-in Sharp high-quality 2x upscaler (Lanczos3 resampler)
+  // 2. Built-in Sharp high-quality upscaler (Lanczos3 resampler + adaptive mode)
   try {
-    const outputBuffer = await sharp(input.imageBuffer)
-      .resize({
-        width: targetWidth,
-        height: targetHeight,
-        kernel: sharp.kernel.lanczos3,
-      })
-      .png({ quality: 100 })
-      .toBuffer();
+    let pipeline = sharp(input.imageBuffer).resize({
+      width: targetWidth,
+      height: targetHeight,
+      kernel: sharp.kernel.lanczos3,
+    });
+
+    if (mode === "sharp") {
+      // Gentle unsharp mask for enhanced clarity without noise
+      pipeline = pipeline.sharpen({
+        sigma: 0.8,
+        m1: 0.8,
+        m2: 1.5,
+      });
+    }
+
+    const outputBuffer = await pipeline.png({ quality: 100 }).toBuffer();
 
     return {
       success: true,
@@ -92,12 +114,14 @@ export async function upscaleImage(input: UpscaleInput): Promise<UpscaleOutput> 
       outputWidth: targetWidth,
       outputHeight: targetHeight,
       scale,
+      mode,
       processingTimeMs: Date.now() - startTime,
     };
   } catch (err: any) {
     return {
       success: false,
       scale,
+      mode,
       processingTimeMs: Date.now() - startTime,
       error: err.message || "Sharp upscaling failed.",
     };
