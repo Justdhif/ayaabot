@@ -49,3 +49,10 @@ export const BOT_THEME = {
   COLOR_ROSE: 0xFF758F,
   BANNER_URL: "https://ayaabot.vercel.app/banner.png",
 } as const;
+
+export const DISCORD_CONFIG = {
+  STREAK_3D_ROLE_ID: "1549701196812525568",
+  STREAK_3D_ROLE_NAME: "ayaa sweetheart",
+  DEFAULT_GUILD_ID: "1549351162510319678",
+} as const;
+

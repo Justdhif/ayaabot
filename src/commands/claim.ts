@@ -1,7 +1,8 @@
 import { claimDailyReward } from "../services/economy.service";
-import { BOT_THEME } from "../config/constants";
+import { BOT_THEME, DISCORD_CONFIG } from "../config/constants";
+import { assignGuildRole } from "../services/discord-role.service";
 
-export async function handleClaimCommand(discordId: string) {
+export async function handleClaimCommand(discordId: string, guildId?: string) {
   const result = await claimDailyReward(discordId);
 
   if (!result.success) {
@@ -46,9 +47,32 @@ export async function handleClaimCommand(discordId: string) {
 
   const user = result.user!;
   const streakCount = result.streak || 1;
+
+  // Streak Role Assignment (Streak >= 3)
+  let roleStatusText = "";
+  if (streakCount >= 3) {
+    const roleRes = await assignGuildRole(
+      guildId || DISCORD_CONFIG.DEFAULT_GUILD_ID,
+      discordId,
+      DISCORD_CONFIG.STREAK_3D_ROLE_ID,
+      DISCORD_CONFIG.STREAK_3D_ROLE_NAME
+    );
+
+    if (roleRes.success) {
+      roleStatusText = `\n\n👑 **SPECIAL ROLE REWARD DIAKTIFKAN!**\nSelamat! Kamu resmi mendapatkan role **@${DISCORD_CONFIG.STREAK_3D_ROLE_NAME}** di server! 🌸💕✨`;
+    } else {
+      roleStatusText = `\n\n👑 **SPECIAL ROLE REWARD:**\nKamu berhak atas role **@${DISCORD_CONFIG.STREAK_3D_ROLE_NAME}**! *(Catatan: Bot sedang menyinkronkan izin role di server)* 🌸`;
+    }
+  } else {
+    const daysLeft = 3 - streakCount;
+    roleStatusText = `\n\n💡 *Tips: Capai streak 3 hari untuk otomatis membuka role khusus **@${DISCORD_CONFIG.STREAK_3D_ROLE_NAME}** di server! (${daysLeft} hari lagi)* 🌸`;
+  }
+
   const streakMultiplierText =
     streakCount >= 7
       ? "👑 **STREAK MASTER (7+ HARI)** — Maksimal Bonus! 🎉"
+      : streakCount >= 3
+      ? `🔥 **Streak Berjalan: Hari ke-${streakCount}** (Role Reward Unlocked! ✨)`
       : streakCount > 1
       ? `🔥 **Streak Berjalan: Hari ke-${streakCount}** (Bonus Makin Banyak!)`
       : "🌱 **Streak Baru: Hari ke-1**";
@@ -68,8 +92,9 @@ export async function handleClaimCommand(discordId: string) {
             "**Isi Dompet Kamu Sekarang:**\n" +
             `💰 Saldo Money: **${user.money.toLocaleString("id-ID")}**\n` +
             `🎟️ Tiket Limit: **${user.limitCount.toLocaleString("id-ID")}**\n` +
-            `🔥 Daily Streak: **${streakCount} Hari Berturut-turut**\n\n` +
-            "*Kembali lagi besok dalam 24 jam untuk melipatgandakan streak & bonusmu yaa manis~ 🧸💕*",
+            `🔥 Daily Streak: **${streakCount} Hari Berturut-turut**` +
+            roleStatusText +
+            "\n\n*Kembali lagi besok dalam 24 jam untuk melipatgandakan streak & bonusmu yaa manis~ 🧸💕*",
           image: {
             url: BOT_THEME.BANNER_URL,
           },
@@ -81,3 +106,4 @@ export async function handleClaimCommand(discordId: string) {
     },
   };
 }
+

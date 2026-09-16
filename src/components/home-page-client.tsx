@@ -23,6 +23,7 @@ import {
   RefreshCw,
   History,
   Send,
+  Crown,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -380,6 +381,20 @@ export function HomePageClient() {
                     </h4>
                     <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
                       Sistem streak berturut-turut! Hadiah bertambah banyak tiap hari dari +1.000 Money (Hari 1) hingga +3.000 Money &amp; +8 Tiket HD (Hari 7+).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Crown className="w-5 h-5 text-amber-500 fill-amber-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Auto-Role Khusus Discord: @ayaa sweetheart
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      User yang konsisten claim 3 hari berturut-turut otomatis dihadiahi role eksklusif <strong>@ayaa sweetheart</strong> di server Discord!
                     </p>
                   </div>
                 </div>

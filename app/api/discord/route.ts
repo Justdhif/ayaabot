@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       }
 
       case "claim": {
-        const response = await handleClaimCommand(user.discordId);
+        const response = await handleClaimCommand(user.discordId, interaction.guild_id);
         return NextResponse.json(response);
       }
 
@@ -293,7 +293,7 @@ export async function POST(req: NextRequest) {
 
     // Button 1: Claim Daily Reward
     if (action === "btn_claim") {
-      const claimResult = await handleClaimCommand(discordUserId);
+      const claimResult = await handleClaimCommand(discordUserId, interaction.guild_id);
       return NextResponse.json(claimResult);
     }
 
