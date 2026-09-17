@@ -61,6 +61,8 @@ export const BOT_THEME = {
   COLOR_PINK: 0xFFA6C9, // Cute Soft Pastel Pink
   COLOR_GOLD: 0xFFD166,
   COLOR_ROSE: 0xFF758F,
+  COLOR_PURPLE: 0xC77DFF,
+  COLOR_SKY: 0x4CC9F0,
   BANNER_URL: "https://ayaabot.vercel.app/banner.png",
 } as const;
 

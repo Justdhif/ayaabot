@@ -18,6 +18,13 @@ import { handleWatermarkCommand } from "@/commands/watermark";
 import { handleAvatarCommand } from "@/commands/avatar";
 import { getDiscordAvatarUrl } from "@/services/avatar.service";
 import { BOT_THEME, ECONOMY } from "@/config/constants";
+import {
+  buildHdPanel,
+  buildFilterPanel,
+  buildConvertPanel,
+  buildWatermarkPanel,
+  buildGiftPanel,
+} from "@/components/discord-buttons";
 
 export const maxDuration = 60; // Allow up to 60s execution for image processing
 
@@ -31,6 +38,9 @@ async function patchDiscordOriginalMessage(
 ): Promise<boolean> {
   const webhookUrl = `https://discord.com/api/v10/webhooks/${applicationId}/${token}/messages/@original`;
   const messageData = result.responsePayload.data || result.responsePayload;
+  if (messageData && typeof messageData === "object" && messageData.components === undefined) {
+    messageData.components = [];
+  }
 
   try {
     if (result.fileAttachment) {
@@ -160,8 +170,37 @@ export async function POST(req: NextRequest) {
         }
 
         case "claim": {
-          const response = await handleClaimCommand(user.discordId, interaction.guild_id);
-          return NextResponse.json(response);
+          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+          const interactionToken = interaction.token;
+
+          waitUntil(
+            (async () => {
+              try {
+                const response = await handleClaimCommand(user.discordId, interaction.guild_id);
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: response,
+                });
+              } catch (claimErr) {
+                console.error("Background claim error:", claimErr);
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    type: 4,
+                    data: {
+                      embeds: [
+                        {
+                          title: "😿 Ups, Gagal Mengambil Hadiah",
+                          color: BOT_THEME.COLOR_ROSE,
+                          description: "Ayaa gagal memproses claim kamu nih, coba sebentar lagi yaa~ 🥺",
+                        },
+                      ],
+                    },
+                  },
+                });
+              }
+            })()
+          );
+
+          return NextResponse.json({ type: 5 });
         }
 
         case "hd": {
@@ -172,62 +211,31 @@ export async function POST(req: NextRequest) {
 
           const attachmentId = imageOption?.value;
           const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+
+          if (!attachment || !attachment.url) {
+            return NextResponse.json({
+              type: 4,
+              data: {
+                embeds: [
+                  {
+                    title: "🌸 Mana Fotonya Manis? 📷",
+                    color: BOT_THEME.COLOR_ROSE,
+                    description: "Jangan lupa lampirkan foto yang mau kamu sulap di kolom `image` yaa~ 🎀",
+                  },
+                ],
+                flags: 64,
+              },
+            });
+          }
+
           const scale = scaleOption ? Number(scaleOption.value) : 2;
           const mode = modeOption ? (modeOption.value as "sharp" | "soft") : "sharp";
 
-          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-          const interactionToken = interaction.token;
-
-          waitUntil(
-            (async () => {
-              try {
-                const hdResult = await handleHdCommand(user, attachment, { scale, mode });
-                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, hdResult);
-
-                // Anti-Rugi Guarantee: Jika file gagal dikirim Discord padahal saldo terpotong, auto-refund!
-                if (!delivered && hdResult.fileAttachment) {
-                  const costMoney = scale === 4 ? ECONOMY.HD_COST_MONEY_4X : ECONOMY.HD_COST_MONEY_2X;
-                  const costLimit = scale === 4 ? ECONOMY.HD_COST_LIMIT_4X : ECONOMY.HD_COST_LIMIT_2X;
-                  await refundUserBalance(user.id, costMoney, costLimit, "Discord gagal mengirim file HD");
-
-                  await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                    responsePayload: {
-                      type: 4,
-                      data: {
-                        embeds: [
-                          {
-                            title: "😿 Gagal Mengirim Hasil HD",
-                            color: BOT_THEME.COLOR_ROSE,
-                            description:
-                              "Maaf yaa manis, Discord gagal menerima kiriman file foto HD. Tapi tenang aja, **saldo koin & tiket limit kamu sudah 100% dikembalikan secara otomatis**! 🌸✨",
-                          },
-                        ],
-                      },
-                    },
-                  });
-                }
-              } catch (err) {
-                console.error("Background HD processing error:", err);
-                await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                  responsePayload: {
-                    type: 4,
-                    data: {
-                      embeds: [
-                        {
-                          title: "😿 Ups, Gagal Memproses Gambar",
-                          color: BOT_THEME.COLOR_ROSE,
-                          description:
-                            "Maaf yaa manis, terjadi kendala saat memproses fotomu. Tapi tenang aja, **saldo & tiket kamu tetap utuh 100% dan aman** kok! Silakan coba lagi yaa~ 💕",
-                        },
-                      ],
-                    },
-                  },
-                });
-              }
-            })()
-          );
-
-          return NextResponse.json({ type: 5 });
+          const panel = buildHdPanel(user, attachment.url, scale, mode);
+          return NextResponse.json({
+            type: 4,
+            data: panel,
+          });
         }
 
         case "filter": {
@@ -237,59 +245,29 @@ export async function POST(req: NextRequest) {
 
           const attachmentId = imageOption?.value;
           const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
-          const preset = presetOption?.value;
 
-          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-          const interactionToken = interaction.token;
-
-          waitUntil(
-            (async () => {
-              try {
-                const filterResult = await handleFilterCommand(user, attachment, preset);
-                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, filterResult);
-
-                // Anti-Rugi Guarantee: Auto-refund jika pengiriman file filter ke Discord gagal
-                if (!delivered && filterResult.fileAttachment) {
-                  await refundUserBalance(user.id, ECONOMY.FILTER_COST_MONEY, 0, "Discord gagal mengirim file Filter");
-
-                  await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                    responsePayload: {
-                      type: 4,
-                      data: {
-                        embeds: [
-                          {
-                            title: "😿 Gagal Mengirim Hasil Filter",
-                            color: BOT_THEME.COLOR_ROSE,
-                            description:
-                              "Maaf yaa manis, Discord gagal menerima kiriman foto filter. Tapi tenang aja, **saldo koin kamu sudah 100% dikembalikan secara otomatis**! 🌸✨",
-                          },
-                        ],
-                      },
-                    },
-                  });
-                }
-              } catch (err) {
-                console.error("Background Filter processing error:", err);
-                await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                  responsePayload: {
-                    type: 4,
-                    data: {
-                      embeds: [
-                        {
-                          title: "😿 Ups, Gagal Memproses Filter",
-                          color: BOT_THEME.COLOR_ROSE,
-                          description:
-                            "Maaf yaa manis, terjadi kendala saat menerapkan filter. Tapi tenang aja, **saldo kamu tetap utuh 100% dan tidak terpotong** kok! 💕",
-                        },
-                      ],
-                    },
+          if (!attachment || !attachment.url) {
+            return NextResponse.json({
+              type: 4,
+              data: {
+                embeds: [
+                  {
+                    title: "🌸 Mana Fotonya Manis? 📷",
+                    color: BOT_THEME.COLOR_ROSE,
+                    description: "Jangan lupa lampirkan foto yang mau kamu beri filter di kolom `image` yaa~ 🎀",
                   },
-                });
-              }
-            })()
-          );
+                ],
+                flags: 64,
+              },
+            });
+          }
 
-          return NextResponse.json({ type: 5 });
+          const preset = presetOption?.value || "pink_glow";
+          const panel = buildFilterPanel(user, attachment.url, preset);
+          return NextResponse.json({
+            type: 4,
+            data: panel,
+          });
         }
 
         case "convert": {
@@ -300,60 +278,31 @@ export async function POST(req: NextRequest) {
 
           const attachmentId = imageOption?.value;
           const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
-          const format = formatOption?.value;
-          const quality = qualityOption ? Number(qualityOption.value) : 85;
 
-          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-          const interactionToken = interaction.token;
-
-          waitUntil(
-            (async () => {
-              try {
-                const convertResult = await handleConvertCommand(user, attachment, { format, quality });
-                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, convertResult);
-
-                // Anti-Rugi Guarantee: Auto-refund jika pengiriman file convert ke Discord gagal
-                if (!delivered && convertResult.fileAttachment) {
-                  await refundUserBalance(user.id, ECONOMY.CONVERT_COST_MONEY, 0, "Discord gagal mengirim file Convert");
-
-                  await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                    responsePayload: {
-                      type: 4,
-                      data: {
-                        embeds: [
-                          {
-                            title: "😿 Gagal Mengirim Hasil Konversi",
-                            color: BOT_THEME.COLOR_ROSE,
-                            description:
-                              "Maaf yaa manis, Discord gagal menerima file hasil konversi. Tapi tenang aja, **saldo koin kamu sudah 100% dikembalikan secara otomatis**! 🌸✨",
-                          },
-                        ],
-                      },
-                    },
-                  });
-                }
-              } catch (err) {
-                console.error("Background Convert processing error:", err);
-                await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                  responsePayload: {
-                    type: 4,
-                    data: {
-                      embeds: [
-                        {
-                          title: "😿 Ups, Gagal Mengonversi Gambar",
-                          color: BOT_THEME.COLOR_ROSE,
-                          description:
-                            "Maaf yaa manis, terjadi kendala saat konversi foto. Tapi tenang aja, **saldo kamu tetap utuh 100% dan tidak terpotong** kok! 💕",
-                        },
-                      ],
-                    },
+          if (!attachment || !attachment.url) {
+            return NextResponse.json({
+              type: 4,
+              data: {
+                embeds: [
+                  {
+                    title: "🌸 Mana Fotonya Manis? 📷",
+                    color: BOT_THEME.COLOR_ROSE,
+                    description: "Jangan lupa lampirkan foto yang mau kamu konversi di kolom `image` yaa~ 🎀",
                   },
-                });
-              }
-            })()
-          );
+                ],
+                flags: 64,
+              },
+            });
+          }
 
-          return NextResponse.json({ type: 5 });
+          const format = formatOption?.value || "webp";
+          const quality = qualityOption ? Number(qualityOption.value) : 80;
+
+          const panel = buildConvertPanel(user, attachment.url, format, quality);
+          return NextResponse.json({
+            type: 4,
+            data: panel,
+          });
         }
 
         case "gift": {
@@ -361,66 +310,30 @@ export async function POST(req: NextRequest) {
           const userOption = options.find((opt: any) => opt.name === "user" || opt.name === "target");
           const amountOption = options.find((opt: any) => opt.name === "amount");
           const resourceOption = options.find((opt: any) => opt.name === "resource");
-          const messageOption = options.find((opt: any) => opt.name === "message");
 
           const targetDiscordId = userOption?.value;
-          const amount = Math.floor(Number(amountOption?.value || 0));
-          const resource = (resourceOption?.value as "money" | "limit") || "money";
-          const message = messageOption?.value;
+          if (!targetDiscordId) {
+            return NextResponse.json({
+              type: 4,
+              data: {
+                content: "❌ Silakan pilih teman yang ingin kamu kirimi hadiah yaa manis~ 🌸",
+                flags: 64,
+              },
+            });
+          }
 
           const resolvedTargetUser = interaction.data?.resolved?.users?.[targetDiscordId];
           const targetUsername =
             resolvedTargetUser?.global_name || resolvedTargetUser?.username || "Teman Manis";
 
-          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-          const interactionToken = interaction.token;
+          const amount = amountOption ? Math.max(1, Number(amountOption.value)) : 100;
+          const resource = (resourceOption?.value as "money" | "limit") || "money";
 
-          waitUntil(
-            (async () => {
-              try {
-                const giftResult = await handleGiftCommand(
-                  discordUserId,
-                  targetDiscordId,
-                  amount,
-                  resource,
-                  message,
-                  targetUsername
-                );
-
-                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                  responsePayload: giftResult,
-                });
-
-                // Jika webhook gagal terkirim padahal kado sudah terlanjur diproses di database
-                if (!delivered) {
-                  console.warn("[Gift] Message delivery failed, rolling back gift...");
-                  const targetUserObj = await getUserByDiscordId(targetDiscordId);
-                  if (targetUserObj) {
-                    await rollbackGift(user.id, targetUserObj.id, amount, resource, "Discord webhook gagal mengirim kado");
-                  }
-                }
-              } catch (err) {
-                console.error("Background Gift processing error:", err);
-                await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                  responsePayload: {
-                    type: 4,
-                    data: {
-                      embeds: [
-                        {
-                          title: "😿 Gagal Mengirim Kado",
-                          color: BOT_THEME.COLOR_ROSE,
-                          description:
-                            "Maaf yaa manis, terjadi kendala saat memproses kado kamu. Tapi tenang aja, **saldo kamu tetap utuh dan aman 100%**! Silakan coba lagi yaa~ 🌸",
-                        },
-                      ],
-                    },
-                  },
-                });
-              }
-            })()
-          );
-
-          return NextResponse.json({ type: 5 });
+          const panel = buildGiftPanel(user, targetDiscordId, targetUsername, resource, amount);
+          return NextResponse.json({
+            type: 4,
+            data: panel,
+          });
         }
 
         case "watermark": {
@@ -432,65 +345,32 @@ export async function POST(req: NextRequest) {
 
           const attachmentId = imageOption?.value;
           const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
-          const text = textOption?.value;
-          const position = posOption?.value;
-          const opacity = opacityOption?.value;
 
-          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-          const interactionToken = interaction.token;
-
-          waitUntil(
-            (async () => {
-              try {
-                const wmResult = await handleWatermarkCommand(user, attachment, {
-                  text,
-                  position,
-                  opacity,
-                });
-                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, wmResult);
-
-                // Anti-Rugi Guarantee: Auto-refund jika pengiriman file watermark ke Discord gagal
-                if (!delivered && wmResult.fileAttachment) {
-                  await refundUserBalance(user.id, ECONOMY.WATERMARK_COST_MONEY, 0, "Discord gagal mengirim file Watermark");
-
-                  await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                    responsePayload: {
-                      type: 4,
-                      data: {
-                        embeds: [
-                          {
-                            title: "😿 Gagal Mengirim Hasil Watermark",
-                            color: BOT_THEME.COLOR_ROSE,
-                            description:
-                              "Maaf yaa manis, Discord gagal menerima kiriman foto watermark. Tapi tenang aja, **saldo koin kamu sudah 100% dikembalikan secara otomatis**! 🌸✨",
-                          },
-                        ],
-                      },
-                    },
-                  });
-                }
-              } catch (err) {
-                console.error("Background Watermark processing error:", err);
-                await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                  responsePayload: {
-                    type: 4,
-                    data: {
-                      embeds: [
-                        {
-                          title: "😿 Ups, Gagal Memproses Watermark",
-                          color: BOT_THEME.COLOR_ROSE,
-                          description:
-                            "Maaf yaa manis, terjadi kendala saat menempelkan watermark. Tapi tenang aja, **saldo kamu tetap utuh 100% dan tidak terpotong** kok! 💕",
-                        },
-                      ],
-                    },
+          if (!attachment || !attachment.url) {
+            return NextResponse.json({
+              type: 4,
+              data: {
+                embeds: [
+                  {
+                    title: "🌸 Mana Fotonya Manis? 📷",
+                    color: BOT_THEME.COLOR_ROSE,
+                    description: "Jangan lupa lampirkan foto yang mau kamu beri watermark di kolom `image` yaa~ 🎀",
                   },
-                });
-              }
-            })()
-          );
+                ],
+                flags: 64,
+              },
+            });
+          }
 
-          return NextResponse.json({ type: 5 });
+          const wmText = textOption?.value || `@${user.username || "Ayaa Bot"}`;
+          const position = posOption?.value || "bottom_right";
+          const opacity = opacityOption?.value || "normal";
+
+          const panel = buildWatermarkPanel(user, attachment.url, opacity, position, wmText);
+          return NextResponse.json({
+            type: 4,
+            data: panel,
+          });
         }
 
         // Message Context Menu Command (Klik kanan foto di chat -> Apps -> Watermark Foto)
@@ -515,27 +395,11 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-          const interactionToken = interaction.token;
-
-          waitUntil(
-            (async () => {
-              try {
-                const wmResult = await handleWatermarkCommand(user, attachment, {
-                  text: `@${user.username || "Ayaa Bot"}`,
-                });
-                const delivered = await patchDiscordOriginalMessage(applicationId, interactionToken, wmResult);
-
-                if (!delivered && wmResult.fileAttachment) {
-                  await refundUserBalance(user.id, ECONOMY.WATERMARK_COST_MONEY, 0, "Discord gagal mengirim file Watermark");
-                }
-              } catch (err) {
-                console.error("Context menu watermark error:", err);
-              }
-            })()
-          );
-
-          return NextResponse.json({ type: 5 });
+          const panel = buildWatermarkPanel(user, attachment.url);
+          return NextResponse.json({
+            type: 4,
+            data: panel,
+          });
         }
 
         case "avatar": {
@@ -615,8 +479,23 @@ export async function POST(req: NextRequest) {
 
     // Button 1: Claim Daily Reward
     if (action === "btn_claim") {
-      const claimResult = await handleClaimCommand(discordUserId, interaction.guild_id);
-      return NextResponse.json(claimResult);
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const claimResult = await handleClaimCommand(discordUserId, interaction.guild_id);
+            await patchDiscordOriginalMessage(applicationId, interactionToken, {
+              responsePayload: claimResult,
+            });
+          } catch (claimErr) {
+            console.error("Background button claim error:", claimErr);
+          }
+        })()
+      );
+
+      return NextResponse.json({ type: 6 });
     }
 
     // Button 2: View Recent Transactions
@@ -700,6 +579,453 @@ export async function POST(req: NextRequest) {
       );
 
       return NextResponse.json({ type: 5 });
+    }
+
+    // ---------------------------------------------------------
+    // Interactive Panel Buttons: HD (Sulap Foto)
+    // ---------------------------------------------------------
+    if (action === "hd_sw") {
+      const [, scaleStr, mode] = customId.split(":");
+      const scale = Number(scaleStr) || 2;
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+      const panel = buildHdPanel(user, imageUrl, scale, mode as "sharp" | "soft");
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "hd_run") {
+      const [, scaleStr, mode] = customId.split(":");
+      const scale = Number(scaleStr) || 2;
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+
+      if (!imageUrl) {
+        return NextResponse.json({
+          type: 4,
+          data: { content: "❌ URL gambar tidak ditemukan.", flags: 64 },
+        });
+      }
+
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const attachment = {
+              id: "hd_img",
+              filename: "photo.png",
+              url: imageUrl,
+              size: 0,
+            };
+            const hdResult = await handleHdCommand(user, attachment, {
+              scale,
+              mode: mode as "sharp" | "soft",
+            });
+            const delivered = await patchDiscordOriginalMessage(
+              applicationId,
+              interactionToken,
+              hdResult
+            );
+
+            if (!delivered && hdResult.fileAttachment) {
+              const costMoney =
+                scale === 4 ? ECONOMY.HD_COST_MONEY_4X : ECONOMY.HD_COST_MONEY_2X;
+              const costLimit =
+                scale === 4 ? ECONOMY.HD_COST_LIMIT_4X : ECONOMY.HD_COST_LIMIT_2X;
+              await refundUserBalance(
+                user.id,
+                costMoney,
+                costLimit,
+                "Discord gagal mengirim file HD"
+              );
+            }
+          } catch (err) {
+            console.error("Background HD button execution error:", err);
+          }
+        })()
+      );
+
+      return NextResponse.json({
+        type: 7,
+        data: {
+          embeds: [
+            {
+              title: "⏳ Sedang Menyulap Foto Kamu Menjadi HD... 🌸",
+              color: BOT_THEME.COLOR_PINK,
+              description:
+                `Ayaa sedang memproses fotomu dengan skala **${scale}×** (${mode})~ ✨\n\n` +
+                "Tunggu sebentar yaa manis, hasilnya akan segera dikirimkan! 💕",
+              image: { url: imageUrl },
+            },
+          ],
+          components: [],
+        },
+      });
+    }
+
+    // ---------------------------------------------------------
+    // Interactive Panel Buttons: Filter
+    // ---------------------------------------------------------
+    if (action === "fl_sw") {
+      const [, preset] = customId.split(":");
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+      const panel = buildFilterPanel(user, imageUrl, preset);
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "fl_run") {
+      const [, preset] = customId.split(":");
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+
+      if (!imageUrl) {
+        return NextResponse.json({
+          type: 4,
+          data: { content: "❌ URL gambar tidak ditemukan.", flags: 64 },
+        });
+      }
+
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const attachment = {
+              id: "filter_img",
+              filename: "photo.png",
+              url: imageUrl,
+              size: 0,
+            };
+            const filterResult = await handleFilterCommand(user, attachment, preset);
+            const delivered = await patchDiscordOriginalMessage(
+              applicationId,
+              interactionToken,
+              filterResult
+            );
+
+            if (!delivered && filterResult.fileAttachment) {
+              await refundUserBalance(
+                user.id,
+                ECONOMY.FILTER_COST_MONEY,
+                0,
+                "Discord gagal mengirim file Filter"
+              );
+            }
+          } catch (err) {
+            console.error("Background Filter button execution error:", err);
+          }
+        })()
+      );
+
+      return NextResponse.json({
+        type: 7,
+        data: {
+          embeds: [
+            {
+              title: "⏳ Sedang Menerapkan Filter Aesthetic... 🌸",
+              color: BOT_THEME.COLOR_PURPLE,
+              description: `Ayaa sedang memberi sentuhan filter **${preset}** pada fotomu~ ✨\nTunggu sebentar yaa manis! 💕`,
+              image: { url: imageUrl },
+            },
+          ],
+          components: [],
+        },
+      });
+    }
+
+    // ---------------------------------------------------------
+    // Interactive Panel Buttons: Convert
+    // ---------------------------------------------------------
+    if (action === "cv_sw") {
+      const [, format, qualityStr] = customId.split(":");
+      const quality = Number(qualityStr) || 80;
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+      const panel = buildConvertPanel(user, imageUrl, format, quality);
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "cv_run") {
+      const [, format, qualityStr] = customId.split(":");
+      const quality = Number(qualityStr) || 80;
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+
+      if (!imageUrl) {
+        return NextResponse.json({
+          type: 4,
+          data: { content: "❌ URL gambar tidak ditemukan.", flags: 64 },
+        });
+      }
+
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const attachment = {
+              id: "convert_img",
+              filename: "photo.png",
+              url: imageUrl,
+              size: 0,
+            };
+            const convertResult = await handleConvertCommand(user, attachment, {
+              format,
+              quality,
+            });
+            const delivered = await patchDiscordOriginalMessage(
+              applicationId,
+              interactionToken,
+              convertResult
+            );
+
+            if (!delivered && convertResult.fileAttachment) {
+              await refundUserBalance(
+                user.id,
+                ECONOMY.CONVERT_COST_MONEY,
+                0,
+                "Discord gagal mengirim file Convert"
+              );
+            }
+          } catch (err) {
+            console.error("Background Convert button execution error:", err);
+          }
+        })()
+      );
+
+      return NextResponse.json({
+        type: 7,
+        data: {
+          embeds: [
+            {
+              title: "⏳ Sedang Mengonversi & Mengompres Foto... 📦",
+              color: BOT_THEME.COLOR_SKY,
+              description: `Ayaa sedang memproses konversi ke format **${format.toUpperCase()}** (${quality}% kualitas)~ ✨`,
+              image: { url: imageUrl },
+            },
+          ],
+          components: [],
+        },
+      });
+    }
+
+    // ---------------------------------------------------------
+    // Interactive Panel Buttons: Watermark
+    // ---------------------------------------------------------
+    if (action === "wm_sw") {
+      const [, opacity, position] = customId.split(":");
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+      const footerText = interaction.message?.embeds?.[0]?.footer?.text || "";
+      const textMatch = footerText.match(/text=(.+)$/);
+      const activeText = textMatch ? textMatch[1] : `@${user.username || "Ayaa Bot"}`;
+
+      const panel = buildWatermarkPanel(user, imageUrl, opacity, position, activeText);
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "wm_run") {
+      const [, opacity, position] = customId.split(":");
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+      const footerText = interaction.message?.embeds?.[0]?.footer?.text || "";
+      const textMatch = footerText.match(/text=(.+)$/);
+      const activeText = textMatch ? textMatch[1] : `@${user.username || "Ayaa Bot"}`;
+
+      if (!imageUrl) {
+        return NextResponse.json({
+          type: 4,
+          data: { content: "❌ URL gambar tidak ditemukan.", flags: 64 },
+        });
+      }
+
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const attachment = {
+              id: "wm_img",
+              filename: "photo.png",
+              url: imageUrl,
+              size: 0,
+            };
+            const wmResult = await handleWatermarkCommand(user, attachment, {
+              text: activeText,
+              position,
+              opacity,
+            });
+            const delivered = await patchDiscordOriginalMessage(
+              applicationId,
+              interactionToken,
+              wmResult
+            );
+
+            if (!delivered && wmResult.fileAttachment) {
+              await refundUserBalance(
+                user.id,
+                ECONOMY.WATERMARK_COST_MONEY,
+                0,
+                "Discord gagal mengirim file Watermark"
+              );
+            }
+          } catch (err) {
+            console.error("Background Watermark button execution error:", err);
+          }
+        })()
+      );
+
+      return NextResponse.json({
+        type: 7,
+        data: {
+          embeds: [
+            {
+              title: "⏳ Sedang Menempelkan Watermark... 🎨",
+              color: BOT_THEME.COLOR_ROSE,
+              description: `Ayaa sedang menempelkan watermark \`${activeText}\` pada fotomu~ ✨\nTunggu sebentar yaa manis! 💕`,
+              image: { url: imageUrl },
+            },
+          ],
+          components: [],
+        },
+      });
+    }
+
+    // ---------------------------------------------------------
+    // Interactive Panel Buttons: Gift
+    // ---------------------------------------------------------
+    if (action === "gf_sw") {
+      const [, resource, amountStr, targetId] = customId.split(":");
+      const amount = Number(amountStr) || 100;
+      const footerText = interaction.message?.embeds?.[0]?.footer?.text || "";
+      const nameMatch = footerText.match(/Gift to: (.+) \(/);
+      const targetUsername = nameMatch ? nameMatch[1] : "Teman Manis";
+
+      const panel = buildGiftPanel(
+        user,
+        targetId,
+        targetUsername,
+        resource as "money" | "limit",
+        amount
+      );
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "gf_add") {
+      const [, adderStr, resource, amountStr, targetId] = customId.split(":");
+      const newAmount = (Number(amountStr) || 0) + (Number(adderStr) || 0);
+      const footerText = interaction.message?.embeds?.[0]?.footer?.text || "";
+      const nameMatch = footerText.match(/Gift to: (.+) \(/);
+      const targetUsername = nameMatch ? nameMatch[1] : "Teman Manis";
+
+      const panel = buildGiftPanel(
+        user,
+        targetId,
+        targetUsername,
+        resource as "money" | "limit",
+        newAmount
+      );
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "gf_rst") {
+      const [, resource, targetId] = customId.split(":");
+      const footerText = interaction.message?.embeds?.[0]?.footer?.text || "";
+      const nameMatch = footerText.match(/Gift to: (.+) \(/);
+      const targetUsername = nameMatch ? nameMatch[1] : "Teman Manis";
+
+      const panel = buildGiftPanel(
+        user,
+        targetId,
+        targetUsername,
+        resource as "money" | "limit",
+        100
+      );
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "gf_run") {
+      const [, resource, amountStr, targetId] = customId.split(":");
+      const amount = Number(amountStr) || 100;
+      const footerText = interaction.message?.embeds?.[0]?.footer?.text || "";
+      const nameMatch = footerText.match(/Gift to: (.+) \(/);
+      const targetUsername = nameMatch ? nameMatch[1] : "Teman Manis";
+
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const giftResult = await handleGiftCommand(
+              discordUserId,
+              targetId,
+              amount,
+              resource as "money" | "limit",
+              undefined,
+              targetUsername
+            );
+
+            const delivered = await patchDiscordOriginalMessage(
+              applicationId,
+              interactionToken,
+              {
+                responsePayload: giftResult,
+              }
+            );
+
+            if (!delivered) {
+              const targetUserObj = await getUserByDiscordId(targetId);
+              if (targetUserObj) {
+                await rollbackGift(
+                  user.id,
+                  targetUserObj.id,
+                  amount,
+                  resource as any,
+                  "Discord webhook gagal mengirim kado"
+                );
+              }
+            }
+          } catch (err) {
+            console.error("Background Gift button error:", err);
+          }
+        })()
+      );
+
+      return NextResponse.json({
+        type: 7,
+        data: {
+          embeds: [
+            {
+              title: "⏳ Sedang Mengirim Kado Manis... 🎁",
+              color: BOT_THEME.COLOR_PINK,
+              description: `Ayaa sedang memproses pengiriman **${amount.toLocaleString("id-ID")} ${resource === "limit" ? "Tiket Limit" : "Money"}** untuk <@${targetId}>~ ✨`,
+            },
+          ],
+          components: [],
+        },
+      });
     }
 
     return NextResponse.json({

@@ -12,7 +12,7 @@ const commands = [
   },
   {
     name: "hd",
-    description: "Sulap foto jadi 2x / 4x lebih jernih & tajam ✨",
+    description: "Sulap foto jadi 2x / 4x HD jernih via tombol interaktif ✨",
     options: [
       {
         name: "image",
@@ -20,31 +20,11 @@ const commands = [
         type: 11, // ATTACHMENT
         required: true,
       },
-      {
-        name: "scale",
-        description: "Pilihan skala pembesaran (Default: 2x)",
-        type: 4, // INTEGER
-        required: false,
-        choices: [
-          { name: "2x (Standar — 100 💰 + 1 🎟️)", value: 2 },
-          { name: "4x (Ultra HD — 200 💰 + 2 🎟️)", value: 4 },
-        ],
-      },
-      {
-        name: "mode",
-        description: "Karakter hasil sulap foto (Default: Sharp)",
-        type: 3, // STRING
-        required: false,
-        choices: [
-          { name: "Sharp (Detail & Tajam)", value: "sharp" },
-          { name: "Soft (Halus & Mulus)", value: "soft" },
-        ],
-      },
     ],
   },
   {
     name: "filter",
-    description: "Beri filter warna manis & aesthetic pada fotomu (50 💰) 🌸",
+    description: "Beri filter aesthetic manis pada fotomu via tombol interaktif (50 💰) 🌸",
     options: [
       {
         name: "image",
@@ -52,23 +32,11 @@ const commands = [
         type: 11, // ATTACHMENT
         required: true,
       },
-      {
-        name: "preset",
-        description: "Pilihan preset filter estetik",
-        type: 3, // STRING
-        required: true,
-        choices: [
-          { name: "Soft Pink Glow 🌸 (Aura pink lembut & dreamy)", value: "pink_glow" },
-          { name: "Vintage Warm ☕ (Nuansa klasik hangat & nostalgic)", value: "vintage_warm" },
-          { name: "B&W Dreamy 🖤 (Hitam putih kontras elegan)", value: "bw_dreamy" },
-          { name: "Anime Pop 🎨 (Warna cerah, vibrant & tajam)", value: "anime_pop" },
-        ],
-      },
     ],
   },
   {
     name: "convert",
-    description: "Ubah format foto & kompres ukuran file (25 💰) 📦",
+    description: "Ubah format & kompres foto via tombol interaktif (25 💰) 📦",
     options: [
       {
         name: "image",
@@ -76,33 +44,11 @@ const commands = [
         type: 11, // ATTACHMENT
         required: true,
       },
-      {
-        name: "format",
-        description: "Target format file gambar",
-        type: 3, // STRING
-        required: true,
-        choices: [
-          { name: "WebP (Ultra Efisien & Modern)", value: "webp" },
-          { name: "PNG (Lossless & Transparan)", value: "png" },
-          { name: "JPG / JPEG (Standar Ringan)", value: "jpg" },
-        ],
-      },
-      {
-        name: "quality",
-        description: "Kualitas kompresi gambar (Default: 80%)",
-        type: 4, // INTEGER
-        required: false,
-        choices: [
-          { name: "100% (Kualitas Penuh / Maksimal)", value: 100 },
-          { name: "80% (Seimbang — Rekomendasi)", value: 80 },
-          { name: "60% (Kompresi Ekstra Hemat)", value: 60 },
-        ],
-      },
     ],
   },
   {
     name: "gift",
-    description: "Kirim kado koin atau tiket ke teman spesialmu dengan ucapan manis 🎁",
+    description: "Kirim kado koin/tiket ke teman via panel tombol interaktif 🎁",
     options: [
       {
         name: "user",
@@ -112,31 +58,15 @@ const commands = [
       },
       {
         name: "amount",
-        description: "Jumlah koin atau tiket yang ingin dikirim (minimal 1)",
+        description: "Jumlah koin/tiket awal (opsional, bisa diatur lewat tombol)",
         type: 4, // INTEGER
-        required: true,
-      },
-      {
-        name: "resource",
-        description: "Jenis kado yang ingin kamu kirim (Default: Money)",
-        type: 3, // STRING
-        required: false,
-        choices: [
-          { name: "Money (Uang Jajan 💰)", value: "money" },
-          { name: "Limit (Tiket HD 🎟️)", value: "limit" },
-        ],
-      },
-      {
-        name: "message",
-        description: "Pesan atau ucapan manis spesial (opsional)",
-        type: 3, // STRING
         required: false,
       },
     ],
   },
   {
     name: "watermark",
-    description: "Tempel watermark tanda kepemilikan/hak cipta pada fotomu (25 💰) 🎨",
+    description: "Tempel watermark tanda kepemilikan/hak cipta via tombol interaktif (25 💰) 🎨",
     options: [
       {
         name: "image",
@@ -149,29 +79,6 @@ const commands = [
         description: "Teks tulisan watermark (misal: @nama_kamu)",
         type: 3, // STRING
         required: false,
-      },
-      {
-        name: "position",
-        description: "Posisi peletakan watermark di gambar (Default: Kanan Bawah)",
-        type: 3, // STRING
-        required: false,
-        choices: [
-          { name: "Kanan Bawah (Rekomendasi)", value: "bottom_right" },
-          { name: "Kiri Bawah", value: "bottom_left" },
-          { name: "Tengah (Center)", value: "center" },
-          { name: "Kanan Atas", value: "top_right" },
-        ],
-      },
-      {
-        name: "opacity",
-        description: "Kepekatan watermark (Default: Standar)",
-        type: 3, // STRING
-        required: false,
-        choices: [
-          { name: "Halus Transparan (38%)", value: "subtle" },
-          { name: "Standar (70%)", value: "normal" },
-          { name: "Tegas / Jelas (100%)", value: "solid" },
-        ],
       },
     ],
   },
