@@ -13,7 +13,7 @@ export async function handleConvertButtons(
   action: string,
   customId: string
 ): Promise<NextResponse | null> {
-  if (action === "cv_sw") {
+  if (action === "cv_sw" || action === "cv_fmt" || action === "cv_q") {
     const [, format, qualityStr] = customId.split(":");
     const quality = Number(qualityStr) || 80;
     const imageUrl =

@@ -13,7 +13,7 @@ export async function handleStitchButtons(
   action: string,
   customId: string
 ): Promise<NextResponse | null> {
-  if (action === "st_sw") {
+  if (action === "st_sw" || action === "st_layout" || action === "st_border") {
     const [, layout, border] = customId.split(":");
     const fields = interaction.message?.embeds?.[0]?.fields || [];
     const sourcesField = fields.find((f: any) => f.name?.includes("Sumber Gambar"));

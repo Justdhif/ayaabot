@@ -13,7 +13,7 @@ export async function handleWatermarkButtons(
   action: string,
   customId: string
 ): Promise<NextResponse | null> {
-  if (action === "wm_sw") {
+  if (action === "wm_sw" || action === "wm_pos" || action === "wm_op") {
     const [, opacity, position] = customId.split(":");
     const imageUrl =
       interaction.message?.embeds?.[0]?.image?.url ||

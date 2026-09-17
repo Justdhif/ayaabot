@@ -13,7 +13,7 @@ export async function handleHdButtons(
   action: string,
   customId: string
 ): Promise<NextResponse | null> {
-  if (action === "hd_sw") {
+  if (action === "hd_sw" || action === "hd_scale" || action === "hd_mode") {
     const [, scaleStr, mode] = customId.split(":");
     const scale = Number(scaleStr) || 2;
     const imageUrl =

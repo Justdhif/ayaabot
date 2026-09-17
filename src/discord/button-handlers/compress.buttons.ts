@@ -13,7 +13,7 @@ export async function handleCompressButtons(
   action: string,
   customId: string
 ): Promise<NextResponse | null> {
-  if (action === "cp_sw") {
+  if (action === "cp_sw" || action === "cp_mode" || action === "cp_fmt") {
     const [, mode, format] = customId.split(":");
     const imageUrl =
       interaction.message?.embeds?.[0]?.image?.url ||
