@@ -4,14 +4,44 @@ import { users, transactions, User, Transaction } from "../db/schema";
 import { ECONOMY } from "../config/constants";
 import { checkClaimCooldown } from "./ratelimit.service";
 
-export async function getUserByDiscordId(discordId: string): Promise<User | null> {
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.discordId, discordId))
-    .limit(1);
+const userMemoryCache = new Map<string, { user: User; expiresAt: number }>();
 
-  return result.length > 0 ? result[0] : null;
+export function cacheUser(user: User) {
+  userMemoryCache.set(user.discordId, {
+    user,
+    expiresAt: Date.now() + 60 * 1000, // 60s TTL
+  });
+}
+
+export function invalidateUserCache(discordId: string) {
+  userMemoryCache.delete(discordId);
+}
+
+export async function getUserByDiscordId(discordId: string): Promise<User | null> {
+  const cached = userMemoryCache.get(discordId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.user;
+  }
+
+  try {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.discordId, discordId))
+      .limit(1);
+
+    if (result.length > 0) {
+      cacheUser(result[0]);
+      return result[0];
+    }
+    return null;
+  } catch (err) {
+    console.error(`[EconomyService] Error fetching user by discord ID ${discordId}:`, err);
+    if (cached) {
+      return cached.user; // Stale-while-revalidate fallback
+    }
+    return null;
+  }
 }
 
 export function getStreakReward(streak: number): { money: number; limit: number; isBonus: boolean } {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUsersReadyForClaim } from "@/services/economy.service";
-import { BOT_THEME, ECONOMY } from "@/config/constants";
+import { BOT_THEME, ECONOMY, DISCORD_CONFIG } from "@/config/constants";
 
 export const maxDuration = 30;
 
@@ -48,33 +48,99 @@ export async function GET(req: NextRequest) {
     };
 
     let sent = false;
+    let deliveryMethod = "none";
+    let targetDestination = "";
+    let sendError: string | null = null;
 
     // 4. Send to Discord Webhook if configured
     const webhookUrl =
       process.env.DISCORD_REMINDER_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
+
     if (webhookUrl) {
-      const res = await fetch(webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(reminderPayload),
-      });
-      sent = res.ok;
-    } else if (process.env.DISCORD_CHANNEL_ID && process.env.DISCORD_TOKEN) {
-      // 5. Alternatively send to Channel ID via Discord Bot Token
-      const res = await fetch(
-        `https://discord.com/api/v10/channels/${process.env.DISCORD_CHANNEL_ID}/messages`,
-        {
+      deliveryMethod = "webhook";
+      targetDestination = webhookUrl.substring(0, 35) + "...";
+      try {
+        const res = await fetch(webhookUrl, {
           method: "POST",
           headers: {
-            Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(reminderPayload),
+        });
+        sent = res.ok;
+        if (!res.ok) {
+          sendError = `Webhook HTTP ${res.status}: ${await res.text().catch(() => "")}`;
+          console.error("[Cron Reminder] Webhook error:", sendError);
         }
-      );
-      sent = res.ok;
+      } catch (err: any) {
+        sendError = err.message;
+        console.error("[Cron Reminder] Webhook network error:", err);
+      }
+    } else {
+      // 5. Send to Discord Channel via Bot Token
+      const botToken = process.env.DISCORD_TOKEN;
+      let targetChannelId =
+        process.env.DISCORD_CHANNEL_ID || DISCORD_CONFIG.DEFAULT_CHANNEL_ID;
+
+      // If channel ID not explicitly set, auto-discover first text channel in guild
+      if (!targetChannelId && botToken) {
+        const guildId = process.env.DISCORD_GUILD_ID || DISCORD_CONFIG.DEFAULT_GUILD_ID;
+        try {
+          const channelsRes = await fetch(
+            `https://discord.com/api/v10/guilds/${guildId}/channels`,
+            { headers: { Authorization: `Bot ${botToken}` } }
+          );
+          if (channelsRes.ok) {
+            const channels = await channelsRes.json();
+            const textChannel =
+              channels.find(
+                (c: any) => c.type === 0 && (c.name === "general" || c.name.includes("chat"))
+              ) || channels.find((c: any) => c.type === 0);
+            if (textChannel) {
+              targetChannelId = textChannel.id;
+            }
+          }
+        } catch (discoverErr) {
+          console.warn("[Cron Reminder] Failed to auto-discover channel:", discoverErr);
+        }
+      }
+
+      if (targetChannelId && botToken) {
+        deliveryMethod = "bot_channel";
+        targetDestination = `channel:${targetChannelId}`;
+        try {
+          const res = await fetch(
+            `https://discord.com/api/v10/channels/${targetChannelId}/messages`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bot ${botToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(reminderPayload),
+            }
+          );
+          sent = res.ok;
+          if (!res.ok) {
+            const errBody = await res.text().catch(() => "");
+            sendError = `Discord API HTTP ${res.status}: ${errBody}`;
+            console.error(
+              `[Cron Reminder] Failed to send message to channel ${targetChannelId}:`,
+              res.status,
+              errBody
+            );
+          }
+        } catch (netErr: any) {
+          sendError = netErr.message;
+          console.error("[Cron Reminder] Network error sending reminder to channel:", netErr);
+        }
+      } else {
+        sendError = "No webhook URL, channel ID, or bot token configured";
+        console.warn("[Cron Reminder] Target destination not configured:", {
+          targetChannelId,
+          hasToken: !!botToken,
+        });
+      }
     }
 
     return NextResponse.json({
@@ -82,6 +148,9 @@ export async function GET(req: NextRequest) {
       timestamp: new Date().toISOString(),
       readyUserCount: readyCount,
       notificationSent: sent,
+      deliveryMethod,
+      targetDestination,
+      error: sendError,
       users: readyUsers.map((u) => ({ id: u.discordId, username: u.username })),
     });
   } catch (err: any) {

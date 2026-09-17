@@ -33,14 +33,14 @@ async function main() {
       }))
     : [
         {
-          discordId: "123456789012345678", // Placeholder User A (Owner)
-          username: "Owner (Placeholder)",
+          discordId: "1223503242483466340",
+          username: "KAB - Nadhif",
           money: 0,
           limitCount: 0,
         },
         {
-          discordId: "876543210987654321", // Placeholder User B (Authorized)
-          username: "Authorized User (Placeholder)",
+          discordId: "1495264758796910695",
+          username: "ayaa piyik",
           money: 0,
           limitCount: 0,
         },

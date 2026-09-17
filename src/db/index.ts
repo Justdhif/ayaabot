@@ -11,6 +11,8 @@ import * as schema from "./schema";
 if (typeof WebSocket === "undefined") {
   neonConfig.webSocketConstructor = ws;
 }
+// Enable fast HTTP fetch queries for serverless to prevent WebSocket timeouts/stalls
+neonConfig.poolQueryViaFetch = true;
 
 const databaseUrl = process.env.DATABASE_URL;
 

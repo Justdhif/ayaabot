@@ -127,6 +127,8 @@ export async function POST(req: NextRequest) {
 
   // 3. Handle Application Commands (Type 2)
   if (interaction.type === 2) {
+    const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+    const interactionToken = interaction.token;
     const discordUserId = interaction.member?.user?.id || interaction.user?.id;
     const commandName = interaction.data?.name;
 
@@ -137,312 +139,320 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Authorization Check: Whitelist verification against Neon database
-    const user = await getUserByDiscordId(discordUserId);
-    if (!user) {
-      return NextResponse.json({
-        type: 4,
-        data: {
-          embeds: [
-            {
-              title: "🔒 Akses Terbatas yaa~ 🌸",
-              color: 0xFF758F,
-              description:
-                "Maaf yaa manis, Ayaa Bot saat ini berstatus **Private Bot** dan hanya bisa digunakan oleh teman-teman yang sudah terdaftar di whitelist~ 🥺💕",
-            },
-          ],
-          flags: 64, // Ephemeral (hanya terlihat oleh user)
-        },
-      });
-    }
+    waitUntil(
+      (async () => {
+        try {
+          // Authorization Check: Whitelist verification against Neon database / in-memory cache
+          const user = await getUserByDiscordId(discordUserId);
+          if (!user) {
+            await patchDiscordOriginalMessage(applicationId, interactionToken, {
+              responsePayload: {
+                embeds: [
+                  {
+                    title: "🔒 Akses Terbatas yaa~ 🌸",
+                    color: 0xff758f,
+                    description:
+                      "Maaf yaa manis, Ayaa Bot saat ini berstatus **Private Bot** dan hanya bisa digunakan oleh teman-teman yang sudah terdaftar di whitelist~ 🥺💕",
+                  },
+                ],
+              },
+            });
+            return;
+          }
 
-    try {
-      // Command Dispatch
-      switch (commandName) {
-        case "help": {
-          const response = handleHelpCommand();
-          return NextResponse.json(response);
-        }
+          // Command Dispatch
+          switch (commandName) {
+            case "help": {
+              const response = handleHelpCommand();
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: response,
+              });
+              break;
+            }
 
-        case "balance": {
-          const response = handleBalanceCommand(user);
-          return NextResponse.json(response);
-        }
+            case "balance": {
+              const response = handleBalanceCommand(user);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: response,
+              });
+              break;
+            }
 
-        case "claim": {
-          const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
-          const interactionToken = interaction.token;
+            case "claim": {
+              const response = await handleClaimCommand(user.discordId, interaction.guild_id);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: response,
+              });
+              break;
+            }
 
-          waitUntil(
-            (async () => {
-              try {
-                const response = await handleClaimCommand(user.discordId, interaction.guild_id);
-                await patchDiscordOriginalMessage(applicationId, interactionToken, {
-                  responsePayload: response,
-                });
-              } catch (claimErr) {
-                console.error("Background claim error:", claimErr);
+            case "hd": {
+              const options = interaction.data?.options || [];
+              const imageOption = options.find((opt: any) => opt.name === "image");
+              const scaleOption = options.find((opt: any) => opt.name === "scale");
+              const modeOption = options.find((opt: any) => opt.name === "mode");
+
+              const attachmentId = imageOption?.value;
+              const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+
+              if (!attachment || !attachment.url) {
                 await patchDiscordOriginalMessage(applicationId, interactionToken, {
                   responsePayload: {
-                    type: 4,
-                    data: {
-                      embeds: [
-                        {
-                          title: "😿 Ups, Gagal Mengambil Hadiah",
-                          color: BOT_THEME.COLOR_ROSE,
-                          description: "Ayaa gagal memproses claim kamu nih, coba sebentar lagi yaa~ 🥺",
-                        },
-                      ],
-                    },
+                    embeds: [
+                      {
+                        title: "🌸 Mana Fotonya Manis? 📷",
+                        color: BOT_THEME.COLOR_ROSE,
+                        description:
+                          "Jangan lupa sertakan foto yang mau kamu sulap di kolom `image` yaa manis~ 🎀\n\n" +
+                          "👉 *Contoh: Ketik `/hd image:` lalu upload fotomu, nanti panel tombol pilihan 2× / 4× dan karakternya akan langsung muncul!* 💕",
+                      },
+                    ],
                   },
                 });
+                break;
               }
-            })()
-          );
 
-          return NextResponse.json({ type: 5 });
-        }
+              const scale = scaleOption ? Number(scaleOption.value) : 2;
+              const mode = modeOption ? (modeOption.value as "sharp" | "soft") : "sharp";
 
-        case "hd": {
-          const options = interaction.data?.options || [];
-          const imageOption = options.find((opt: any) => opt.name === "image");
-          const scaleOption = options.find((opt: any) => opt.name === "scale");
-          const modeOption = options.find((opt: any) => opt.name === "mode");
+              const panel = buildHdPanel(user, attachment.url, scale, mode);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: panel,
+              });
+              break;
+            }
 
-          const attachmentId = imageOption?.value;
-          const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+            case "filter": {
+              const options = interaction.data?.options || [];
+              const imageOption = options.find((opt: any) => opt.name === "image");
+              const presetOption = options.find((opt: any) => opt.name === "preset");
 
-          if (!attachment || !attachment.url) {
-            return NextResponse.json({
-              type: 4,
-              data: {
-                embeds: [
-                  {
-                    title: "🌸 Mana Fotonya Manis? 📷",
-                    color: BOT_THEME.COLOR_ROSE,
-                    description: "Jangan lupa lampirkan foto yang mau kamu sulap di kolom `image` yaa~ 🎀",
+              const attachmentId = imageOption?.value;
+              const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+
+              if (!attachment || !attachment.url) {
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    embeds: [
+                      {
+                        title: "🌸 Mana Fotonya Manis? 📷",
+                        color: BOT_THEME.COLOR_ROSE,
+                        description:
+                          "Jangan lupa sertakan foto yang mau kamu beri filter di kolom `image` yaa manis~ 🎀\n\n" +
+                          "👉 *Contoh: Ketik `/filter image:` lalu upload fotomu, nanti panel tombol preset filter aesthetic akan muncul!* 💕",
+                      },
+                    ],
                   },
-                ],
-                flags: 64,
-              },
-            });
-          }
+                });
+                break;
+              }
 
-          const scale = scaleOption ? Number(scaleOption.value) : 2;
-          const mode = modeOption ? (modeOption.value as "sharp" | "soft") : "sharp";
+              const preset = presetOption?.value || "pink_glow";
+              const panel = buildFilterPanel(user, attachment.url, preset);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: panel,
+              });
+              break;
+            }
 
-          const panel = buildHdPanel(user, attachment.url, scale, mode);
-          return NextResponse.json({
-            type: 4,
-            data: panel,
-          });
-        }
+            case "convert": {
+              const options = interaction.data?.options || [];
+              const imageOption = options.find((opt: any) => opt.name === "image");
+              const formatOption = options.find((opt: any) => opt.name === "format");
+              const qualityOption = options.find((opt: any) => opt.name === "quality");
 
-        case "filter": {
-          const options = interaction.data?.options || [];
-          const imageOption = options.find((opt: any) => opt.name === "image");
-          const presetOption = options.find((opt: any) => opt.name === "preset");
+              const attachmentId = imageOption?.value;
+              const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
 
-          const attachmentId = imageOption?.value;
-          const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
-
-          if (!attachment || !attachment.url) {
-            return NextResponse.json({
-              type: 4,
-              data: {
-                embeds: [
-                  {
-                    title: "🌸 Mana Fotonya Manis? 📷",
-                    color: BOT_THEME.COLOR_ROSE,
-                    description: "Jangan lupa lampirkan foto yang mau kamu beri filter di kolom `image` yaa~ 🎀",
+              if (!attachment || !attachment.url) {
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    embeds: [
+                      {
+                        title: "🌸 Mana Fotonya Manis? 📷",
+                        color: BOT_THEME.COLOR_ROSE,
+                        description:
+                          "Jangan lupa sertakan foto yang mau kamu konversi di kolom `image` yaa manis~ 🎀\n\n" +
+                          "👉 *Contoh: Ketik `/convert image:` lalu upload fotomu, nanti tombol format WebP/PNG/JPG akan muncul!* 💕",
+                      },
+                    ],
                   },
-                ],
-                flags: 64,
-              },
-            });
-          }
+                });
+                break;
+              }
 
-          const preset = presetOption?.value || "pink_glow";
-          const panel = buildFilterPanel(user, attachment.url, preset);
-          return NextResponse.json({
-            type: 4,
-            data: panel,
-          });
-        }
+              const format = formatOption?.value || "webp";
+              const quality = qualityOption ? Number(qualityOption.value) : 80;
 
-        case "convert": {
-          const options = interaction.data?.options || [];
-          const imageOption = options.find((opt: any) => opt.name === "image");
-          const formatOption = options.find((opt: any) => opt.name === "format");
-          const qualityOption = options.find((opt: any) => opt.name === "quality");
+              const panel = buildConvertPanel(user, attachment.url, format, quality);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: panel,
+              });
+              break;
+            }
 
-          const attachmentId = imageOption?.value;
-          const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+            case "gift": {
+              const options = interaction.data?.options || [];
+              const userOption = options.find((opt: any) => opt.name === "user" || opt.name === "target");
+              const amountOption = options.find((opt: any) => opt.name === "amount");
+              const resourceOption = options.find((opt: any) => opt.name === "resource");
 
-          if (!attachment || !attachment.url) {
-            return NextResponse.json({
-              type: 4,
-              data: {
-                embeds: [
-                  {
-                    title: "🌸 Mana Fotonya Manis? 📷",
-                    color: BOT_THEME.COLOR_ROSE,
-                    description: "Jangan lupa lampirkan foto yang mau kamu konversi di kolom `image` yaa~ 🎀",
+              const targetDiscordId = userOption?.value;
+              if (!targetDiscordId) {
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    embeds: [
+                      {
+                        title: "🌸 Mau Kirim Kado ke Siapa Manis? 🎁",
+                        color: BOT_THEME.COLOR_ROSE,
+                        description:
+                          "Silakan pilih teman yang mau kamu kirimi kado di kolom `user` yaa manis~ 🎀\n\n" +
+                          "👉 *Contoh: Ketik `/gift user: @teman`, nanti panel tombol pilih saldo & nominal kado akan langsung muncul!* 💕",
+                      },
+                    ],
                   },
-                ],
-                flags: 64,
-              },
-            });
-          }
+                });
+                break;
+              }
 
-          const format = formatOption?.value || "webp";
-          const quality = qualityOption ? Number(qualityOption.value) : 80;
+              const resolvedTargetUser = interaction.data?.resolved?.users?.[targetDiscordId];
+              const targetUsername =
+                resolvedTargetUser?.global_name || resolvedTargetUser?.username || "Teman Manis";
 
-          const panel = buildConvertPanel(user, attachment.url, format, quality);
-          return NextResponse.json({
-            type: 4,
-            data: panel,
-          });
-        }
+              const amount = amountOption ? Math.max(1, Number(amountOption.value)) : 100;
+              const resource = (resourceOption?.value as "money" | "limit") || "money";
 
-        case "gift": {
-          const options = interaction.data?.options || [];
-          const userOption = options.find((opt: any) => opt.name === "user" || opt.name === "target");
-          const amountOption = options.find((opt: any) => opt.name === "amount");
-          const resourceOption = options.find((opt: any) => opt.name === "resource");
+              const panel = buildGiftPanel(user, targetDiscordId, targetUsername, resource, amount);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: panel,
+              });
+              break;
+            }
 
-          const targetDiscordId = userOption?.value;
-          if (!targetDiscordId) {
-            return NextResponse.json({
-              type: 4,
-              data: {
-                content: "❌ Silakan pilih teman yang ingin kamu kirimi hadiah yaa manis~ 🌸",
-                flags: 64,
-              },
-            });
-          }
+            case "watermark": {
+              const options = interaction.data?.options || [];
+              const imageOption = options.find((opt: any) => opt.name === "image");
+              const textOption = options.find((opt: any) => opt.name === "text");
+              const posOption = options.find((opt: any) => opt.name === "position");
+              const opacityOption = options.find((opt: any) => opt.name === "opacity");
 
-          const resolvedTargetUser = interaction.data?.resolved?.users?.[targetDiscordId];
-          const targetUsername =
-            resolvedTargetUser?.global_name || resolvedTargetUser?.username || "Teman Manis";
+              const attachmentId = imageOption?.value;
+              const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
 
-          const amount = amountOption ? Math.max(1, Number(amountOption.value)) : 100;
-          const resource = (resourceOption?.value as "money" | "limit") || "money";
-
-          const panel = buildGiftPanel(user, targetDiscordId, targetUsername, resource, amount);
-          return NextResponse.json({
-            type: 4,
-            data: panel,
-          });
-        }
-
-        case "watermark": {
-          const options = interaction.data?.options || [];
-          const imageOption = options.find((opt: any) => opt.name === "image");
-          const textOption = options.find((opt: any) => opt.name === "text");
-          const posOption = options.find((opt: any) => opt.name === "position");
-          const opacityOption = options.find((opt: any) => opt.name === "opacity");
-
-          const attachmentId = imageOption?.value;
-          const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
-
-          if (!attachment || !attachment.url) {
-            return NextResponse.json({
-              type: 4,
-              data: {
-                embeds: [
-                  {
-                    title: "🌸 Mana Fotonya Manis? 📷",
-                    color: BOT_THEME.COLOR_ROSE,
-                    description: "Jangan lupa lampirkan foto yang mau kamu beri watermark di kolom `image` yaa~ 🎀",
+              if (!attachment || !attachment.url) {
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    embeds: [
+                      {
+                        title: "🌸 Mana Fotonya Manis? 📷",
+                        color: BOT_THEME.COLOR_ROSE,
+                        description:
+                          "Jangan lupa sertakan foto yang mau kamu beri watermark di kolom `image` yaa manis~ 🎀\n\n" +
+                          "👉 *Contoh: Ketik `/watermark image:` lalu upload fotomu, nanti panel tombol posisi & kepekatan akan muncul!* 💕",
+                      },
+                    ],
                   },
-                ],
-                flags: 64,
-              },
-            });
-          }
+                });
+                break;
+              }
 
-          const wmText = textOption?.value || `@${user.username || "Ayaa Bot"}`;
-          const position = posOption?.value || "bottom_right";
-          const opacity = opacityOption?.value || "normal";
+              const wmText = textOption?.value || `@${user.username || "Ayaa Bot"}`;
+              const position = posOption?.value || "bottom_right";
+              const opacity = opacityOption?.value || "normal";
 
-          const panel = buildWatermarkPanel(user, attachment.url, opacity, position, wmText);
-          return NextResponse.json({
-            type: 4,
-            data: panel,
-          });
-        }
+              const panel = buildWatermarkPanel(user, attachment.url, opacity, position, wmText);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: panel,
+              });
+              break;
+            }
 
-        // Message Context Menu Command (Klik kanan foto di chat -> Apps -> Watermark Foto)
-        case "Watermark Foto": {
-          const targetMessageId = interaction.data?.target_id;
-          const targetMessage = interaction.data?.resolved?.messages?.[targetMessageId];
-          const attachment = targetMessage?.attachments?.[0];
+            // Message Context Menu Command (Klik kanan foto di chat -> Apps -> Watermark Foto)
+            case "Watermark Foto": {
+              const targetMessageId = interaction.data?.target_id;
+              const targetMessage = interaction.data?.resolved?.messages?.[targetMessageId];
+              const attachment = targetMessage?.attachments?.[0];
 
-          if (!attachment || !attachment.url) {
-            return NextResponse.json({
-              type: 4,
-              data: {
-                embeds: [
-                  {
-                    title: "🌸 Mana Fotonya Manis? 📷",
-                    color: BOT_THEME.COLOR_ROSE,
-                    description: "Pesan yang kamu pilih tidak memiliki lampiran foto yaa manis~ 🥺",
+              if (!attachment || !attachment.url) {
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    embeds: [
+                      {
+                        title: "🌸 Mana Fotonya Manis? 📷",
+                        color: BOT_THEME.COLOR_ROSE,
+                        description: "Pesan yang kamu pilih tidak memiliki lampiran foto yaa manis~ 🥺",
+                      },
+                    ],
                   },
-                ],
-                flags: 64,
-              },
-            });
-          }
+                });
+                break;
+              }
 
-          const panel = buildWatermarkPanel(user, attachment.url);
-          return NextResponse.json({
-            type: 4,
-            data: panel,
+              const panel = buildWatermarkPanel(user, attachment.url);
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: panel,
+              });
+              break;
+            }
+
+            case "avatar": {
+              const options = interaction.data?.options || [];
+              const userOption = options.find((opt: any) => opt.name === "user");
+              const serverOption = options.find((opt: any) => opt.name === "server");
+
+              if (serverOption?.value === true) {
+                const avatarRes = handleAvatarCommand({
+                  isServerIcon: true,
+                  guildId: interaction.guild_id,
+                  guildIconHash: interaction.guild?.icon,
+                  guildName: interaction.guild?.name,
+                });
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: avatarRes,
+                });
+                break;
+              }
+
+              let targetUser = interaction.member?.user || interaction.user;
+              if (userOption?.value) {
+                targetUser = interaction.data?.resolved?.users?.[userOption.value] || targetUser;
+              }
+
+              const avatarRes = handleAvatarCommand({ targetUser });
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: avatarRes,
+              });
+              break;
+            }
+
+            default: {
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: {
+                  content: `❌ Unknown command: \`/${commandName}\``,
+                },
+              });
+              break;
+            }
+          }
+        } catch (cmdErr) {
+          console.error(`Unexpected command error for /${commandName}:`, cmdErr);
+          await patchDiscordOriginalMessage(applicationId, interactionToken, {
+            responsePayload: {
+              embeds: [
+                {
+                  title: "😿 Ups, Ayaa Mengalami Sedikit Kendala",
+                  color: BOT_THEME.COLOR_ROSE,
+                  description:
+                    "Maaf yaa manis, terjadi kendala saat memproses perintahmu. Silakan coba beberapa saat lagi yaa~ 🌸",
+                },
+              ],
+            },
           });
         }
+      })()
+    );
 
-        case "avatar": {
-          const options = interaction.data?.options || [];
-          const userOption = options.find((opt: any) => opt.name === "user");
-          const serverOption = options.find((opt: any) => opt.name === "server");
-
-          if (serverOption?.value === true) {
-            const avatarRes = handleAvatarCommand({
-              isServerIcon: true,
-              guildId: interaction.guild_id,
-              guildIconHash: interaction.guild?.icon,
-              guildName: interaction.guild?.name,
-            });
-            return NextResponse.json(avatarRes);
-          }
-
-          let targetUser = interaction.member?.user || interaction.user;
-          if (userOption?.value) {
-            targetUser = interaction.data?.resolved?.users?.[userOption.value] || targetUser;
-          }
-
-          const avatarRes = handleAvatarCommand({ targetUser });
-          return NextResponse.json(avatarRes);
-        }
-
-        default: {
-          return NextResponse.json({
-            type: 4,
-            data: { content: `❌ Unknown command: \`/${commandName}\`` },
-          });
-        }
-      }
-    } catch (cmdErr) {
-      console.error(`Unexpected command error for /${commandName}:`, cmdErr);
-      return NextResponse.json({
-        type: 4,
-        data: {
-          content: "😿 Ayaa mengalami sedikit kendala sistem. Silakan coba perintah beberapa saat lagi yaa~ 🌸",
-          flags: 64,
-        },
-      });
-    }
+    return NextResponse.json({ type: 5 });
   }
 
   // 4. Handle Message Component Interactions (Buttons, Type 3)
