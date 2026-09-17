@@ -13,10 +13,37 @@ export const ECONOMY = {
   FILTER_COST_MONEY: 50,
   CONVERT_COST_MONEY: 25,
   WATERMARK_COST_MONEY: 25,
+  COMPRESS_COST_MONEY: 25,
+  STITCH_COST_MONEY: 50,
 
   CLAIM_COOLDOWN_HOURS: 24,
   HD_COOLDOWN_SECONDS: 15,
 } as const;
+
+export const COMPRESS_MODES = {
+  AUTO_8MB: "auto_8mb",   // Smart target < 8MB for Discord Free/Non-Nitro
+  BALANCED: "balanced",   // 65% quality, great balance
+  LIGHT: "light",         // 80% quality, light reduction
+  EXTREME: "extreme",     // 45% quality, smallest possible size
+} as const;
+
+export type CompressModeKey = (typeof COMPRESS_MODES)[keyof typeof COMPRESS_MODES];
+
+export const STITCH_LAYOUTS = {
+  HORIZONTAL: "horizontal", // ↔️ side by side
+  VERTICAL: "vertical",     // ↕️ top to bottom
+  GRID: "grid",             // 🔲 2x2 grid
+} as const;
+
+export type StitchLayoutKey = (typeof STITCH_LAYOUTS)[keyof typeof STITCH_LAYOUTS];
+
+export const STITCH_BORDERS = {
+  NONE: "none",     // 0px gap
+  WHITE: "white",   // Clean white border
+  PINK: "pink",     // Cute pink border 🌸
+} as const;
+
+export type StitchBorderKey = (typeof STITCH_BORDERS)[keyof typeof STITCH_BORDERS];
 
 export const WATERMARK_POSITIONS = {
   BOTTOM_RIGHT: "bottom_right",

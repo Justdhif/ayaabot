@@ -1,4 +1,14 @@
-import { BOT_THEME, ECONOMY, FILTER_PRESETS, CONVERT_FORMATS, WATERMARK_POSITIONS, WATERMARK_OPACITY } from "../config/constants";
+import {
+  BOT_THEME,
+  ECONOMY,
+  FILTER_PRESETS,
+  CONVERT_FORMATS,
+  WATERMARK_POSITIONS,
+  WATERMARK_OPACITY,
+  COMPRESS_MODES,
+  STITCH_LAYOUTS,
+  STITCH_BORDERS,
+} from "../config/constants";
 import { User } from "../db/schema";
 
 export interface ButtonComponent {
@@ -509,3 +519,230 @@ export function buildGiftPanel(
 
   return { embeds: [embed], components };
 }
+
+// -------------------------------------------------------------
+// 6. Compress Interactive Panel
+// -------------------------------------------------------------
+export function buildCompressPanel(
+  user: User,
+  imageUrl: string,
+  mode: string = COMPRESS_MODES.AUTO_8MB,
+  format: string = "webp"
+) {
+  const costMoney = ECONOMY.COMPRESS_COST_MONEY;
+
+  const modeDescriptions: Record<string, string> = {
+    [COMPRESS_MODES.AUTO_8MB]: "⚡ **Auto Fit Discord Non-Nitro** (< 8 MB, aman dikirim di Discord)",
+    [COMPRESS_MODES.LIGHT]: "📦 **Ringan** (80% Quality, sedikit kompresi, visual tajam)",
+    [COMPRESS_MODES.BALANCED]: "💨 **Sedang** (65% Quality, ukuran ramping & seimbang)",
+    [COMPRESS_MODES.EXTREME]: "🗜️ **Ekstrem** (45% Quality, ukuran file sekecil mungkin)",
+  };
+
+  const currentDesc = modeDescriptions[mode] || mode;
+
+  const embed = {
+    title: "🗜️ Image Optimizer & Web Compression — Panel Pengaturan 🌸",
+    color: BOT_THEME.COLOR_SKY,
+    description:
+      `Halo **${user.username || "Manis"}**! Mau kecilkan ukuran gambar agar muat dikirim di Discord non-Nitro? Atur opsinya di bawah yaa:\n\n` +
+      `🎯 **Mode Kompresi:** ${currentDesc}\n` +
+      `📁 **Target Format:** **${format.toUpperCase()}**\n` +
+      `💰 **Biaya:** **${costMoney} Money**\n` +
+      `👛 **Saldo Kamu:** ${user.money.toLocaleString("id-ID")} 💰\n\n` +
+      `*Gunakan tombol di bawah untuk switch mode & format, lalu klik **Kompres Sekarang**!*`,
+    image: {
+      url: imageUrl,
+    },
+    footer: {
+      text: `Ayaa Bot 🌸 • Mode: ${mode} | Format: ${format}`,
+    },
+  };
+
+  const components: ActionRowComponent[] = [
+    // Row 1: Compression Modes
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: mode === COMPRESS_MODES.AUTO_8MB ? 1 : 2,
+          label: "⚡ Fit < 8MB (Non-Nitro)",
+          custom_id: `cp_sw:${COMPRESS_MODES.AUTO_8MB}:${format}`,
+        },
+        {
+          type: 2,
+          style: mode === COMPRESS_MODES.LIGHT ? 1 : 2,
+          label: "📦 Ringan (80%)",
+          custom_id: `cp_sw:${COMPRESS_MODES.LIGHT}:${format}`,
+        },
+        {
+          type: 2,
+          style: mode === COMPRESS_MODES.BALANCED ? 1 : 2,
+          label: "💨 Sedang (65%)",
+          custom_id: `cp_sw:${COMPRESS_MODES.BALANCED}:${format}`,
+        },
+        {
+          type: 2,
+          style: mode === COMPRESS_MODES.EXTREME ? 1 : 2,
+          label: "🗜️ Ekstrem (45%)",
+          custom_id: `cp_sw:${COMPRESS_MODES.EXTREME}:${format}`,
+        },
+      ],
+    },
+    // Row 2: Target Format
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: format === "webp" ? 1 : 2,
+          label: "WebP (Paling Hemat)",
+          custom_id: `cp_sw:${mode}:webp`,
+          emoji: { name: "📦" },
+        },
+        {
+          type: 2,
+          style: format === "jpg" ? 1 : 2,
+          label: "JPG / MozJPEG",
+          custom_id: `cp_sw:${mode}:jpg`,
+          emoji: { name: "📷" },
+        },
+        {
+          type: 2,
+          style: format === "png" ? 1 : 2,
+          label: "PNG (Indexed Palette)",
+          custom_id: `cp_sw:${mode}:png`,
+          emoji: { name: "🖼️" },
+        },
+      ],
+    },
+    // Row 3: Action Run
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: 3, // Success Green
+          label: `✨ Kompres Sekarang (${costMoney} 💰) ✨`,
+          custom_id: `cp_run:${mode}:${format}`,
+        },
+      ],
+    },
+  ];
+
+  return { embeds: [embed], components };
+}
+
+// -------------------------------------------------------------
+// 7. Stitch Interactive Panel (Image Merger)
+// -------------------------------------------------------------
+export function buildStitchPanel(
+  user: User,
+  imageUrls: string[],
+  layout: string = STITCH_LAYOUTS.HORIZONTAL,
+  border: string = STITCH_BORDERS.NONE
+) {
+  const costMoney = ECONOMY.STITCH_COST_MONEY;
+
+  const layoutNames: Record<string, string> = {
+    [STITCH_LAYOUTS.HORIZONTAL]: "↔️ Berdampingan (Horizontal / Before vs After)",
+    [STITCH_LAYOUTS.VERTICAL]: "↕️ Atas-Bawah (Vertikal)",
+    [STITCH_LAYOUTS.GRID]: "🔲 Grid 2×2 (Kolase Kotak)",
+  };
+
+  const borderNames: Record<string, string> = {
+    [STITCH_BORDERS.NONE]: "Tanpa Garis Pembatas (0px)",
+    [STITCH_BORDERS.WHITE]: "Garis Putih Bersih (Clean 12px)",
+    [STITCH_BORDERS.PINK]: "Garis Pink Pastel Manis 🌸",
+  };
+
+  const embed = {
+    title: "🎨 Image Merger & Collage Studio — Panel Pengaturan 🎀",
+    color: BOT_THEME.COLOR_PURPLE,
+    description:
+      `Halo **${user.username || "Manis"}**! Satukan **${imageUrls.length} gambar** menjadi satu karya utuh:\n\n` +
+      `📐 **Pilihan Layout:** **${layoutNames[layout] || layout}**\n` +
+      `🖼️ **Garis Pembatas:** **${borderNames[border] || border}**\n` +
+      `💰 **Biaya:** **${costMoney} Money**\n` +
+      `👛 **Saldo Kamu:** ${user.money.toLocaleString("id-ID")} 💰\n\n` +
+      `*Gunakan tombol di bawah untuk memilih susunan layout, lalu klik **Gabungkan Sekarang**!*`,
+    image: {
+      url: imageUrls[0],
+    },
+    fields: [
+      {
+        name: "🖼️ Sumber Gambar",
+        value: imageUrls.map((u, i) => `[Foto ${i + 1}](${u})`).join(" • "),
+      },
+    ],
+    footer: {
+      text: `Ayaa Bot 🌸 • Stitch Merger | Images: ${imageUrls.length} | Layout: ${layout} | Border: ${border}`,
+    },
+  };
+
+  const components: ActionRowComponent[] = [
+    // Row 1: Layout choices
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: layout === STITCH_LAYOUTS.HORIZONTAL ? 1 : 2,
+          label: "↔️ Berdampingan",
+          custom_id: `st_sw:${STITCH_LAYOUTS.HORIZONTAL}:${border}`,
+        },
+        {
+          type: 2,
+          style: layout === STITCH_LAYOUTS.VERTICAL ? 1 : 2,
+          label: "↕️ Atas-Bawah",
+          custom_id: `st_sw:${STITCH_LAYOUTS.VERTICAL}:${border}`,
+        },
+        {
+          type: 2,
+          style: layout === STITCH_LAYOUTS.GRID ? 1 : 2,
+          label: "🔲 Grid 2×2",
+          custom_id: `st_sw:${STITCH_LAYOUTS.GRID}:${border}`,
+        },
+      ],
+    },
+    // Row 2: Border choices
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: border === STITCH_BORDERS.NONE ? 1 : 2,
+          label: "Tanpa Garis",
+          custom_id: `st_sw:${layout}:${STITCH_BORDERS.NONE}`,
+        },
+        {
+          type: 2,
+          style: border === STITCH_BORDERS.WHITE ? 1 : 2,
+          label: "Garis Putih",
+          custom_id: `st_sw:${layout}:${STITCH_BORDERS.WHITE}`,
+        },
+        {
+          type: 2,
+          style: border === STITCH_BORDERS.PINK ? 1 : 2,
+          label: "Garis Pink 🌸",
+          custom_id: `st_sw:${layout}:${STITCH_BORDERS.PINK}`,
+        },
+      ],
+    },
+    // Row 3: Action Run
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: 3, // Success Green
+          label: `✨ Gabungkan Sekarang (${costMoney} 💰) ✨`,
+          custom_id: `st_run:${layout}:${border}`,
+        },
+      ],
+    },
+  ];
+
+  return { embeds: [embed], components };
+}
+

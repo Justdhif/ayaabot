@@ -344,6 +344,100 @@ export async function deductForWatermark(userId: string): Promise<SimpleDeductRe
   };
 }
 
+export async function deductForCompress(userId: string, mode: string): Promise<SimpleDeductResult> {
+  const [currentUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!currentUser) {
+    return { success: false, error: "User not found" };
+  }
+
+  const costMoney = ECONOMY.COMPRESS_COST_MONEY;
+
+  if (currentUser.money < costMoney) {
+    return { success: false, insufficientMoney: true };
+  }
+
+  const now = new Date();
+
+  const updatedUser = await db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(users)
+      .set({
+        money: sql`${users.money} - ${costMoney}`,
+        updatedAt: now,
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    await tx.insert(transactions).values({
+      userId: userId,
+      type: "COMPRESS",
+      moneyChange: -costMoney,
+      limitChange: 0,
+      description: `Image compression (${mode}) cost`,
+      createdAt: now,
+    });
+
+    return updated;
+  });
+
+  return {
+    success: true,
+    user: updatedUser,
+  };
+}
+
+export async function deductForStitch(userId: string, imageCount: number): Promise<SimpleDeductResult> {
+  const [currentUser] = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!currentUser) {
+    return { success: false, error: "User not found" };
+  }
+
+  const costMoney = ECONOMY.STITCH_COST_MONEY;
+
+  if (currentUser.money < costMoney) {
+    return { success: false, insufficientMoney: true };
+  }
+
+  const now = new Date();
+
+  const updatedUser = await db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(users)
+      .set({
+        money: sql`${users.money} - ${costMoney}`,
+        updatedAt: now,
+      })
+      .where(eq(users.id, userId))
+      .returning();
+
+    await tx.insert(transactions).values({
+      userId: userId,
+      type: "STITCH",
+      moneyChange: -costMoney,
+      limitChange: 0,
+      description: `Image stitch merger (${imageCount} images) cost`,
+      createdAt: now,
+    });
+
+    return updated;
+  });
+
+  return {
+    success: true,
+    user: updatedUser,
+  };
+}
+
 export async function getUserRecentTransactions(
   userId: string,
   limit: number = 5

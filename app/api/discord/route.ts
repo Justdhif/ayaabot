@@ -15,15 +15,25 @@ import { handleFilterCommand } from "@/commands/filter";
 import { handleConvertCommand } from "@/commands/convert";
 import { handleGiftCommand } from "@/commands/gift";
 import { handleWatermarkCommand } from "@/commands/watermark";
+import { handleCompressCommand } from "@/commands/compress";
+import { handleStitchCommand } from "@/commands/stitch";
 import { handleAvatarCommand } from "@/commands/avatar";
 import { getDiscordAvatarUrl } from "@/services/avatar.service";
-import { BOT_THEME, ECONOMY } from "@/config/constants";
+import {
+  BOT_THEME,
+  ECONOMY,
+  COMPRESS_MODES,
+  STITCH_LAYOUTS,
+  STITCH_BORDERS,
+} from "@/config/constants";
 import {
   buildHdPanel,
   buildFilterPanel,
   buildConvertPanel,
   buildWatermarkPanel,
   buildGiftPanel,
+  buildCompressPanel,
+  buildStitchPanel,
 } from "@/components/discord-buttons";
 
 export const maxDuration = 60; // Allow up to 60s execution for image processing
@@ -421,6 +431,78 @@ export async function POST(req: NextRequest) {
               const avatarRes = handleAvatarCommand({ targetUser });
               await patchDiscordOriginalMessage(applicationId, interactionToken, {
                 responsePayload: avatarRes,
+              });
+              break;
+            }
+
+            case "compress": {
+              const options = interaction.data?.options || [];
+              const imageOption = options.find((opt: any) => opt.name === "image");
+              const attachmentId = imageOption?.value;
+              const attachment = interaction.data?.resolved?.attachments?.[attachmentId];
+
+              if (!attachment || !attachment.url) {
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    embeds: [
+                      {
+                        title: "🌸 Mana Fotonya Manis? 📷",
+                        color: BOT_THEME.COLOR_ROSE,
+                        description:
+                          "Jangan lupa sertakan foto yang mau kamu kompres di kolom `image` yaa manis~ 🎀\n\n" +
+                          "👉 *Contoh: Ketik `/compress image:` lalu upload fotomu, nanti tombol target kompresi (<8MB dll) akan muncul!* 💕",
+                      },
+                    ],
+                  },
+                });
+                break;
+              }
+
+              const panel = buildCompressPanel(user, attachment.url, COMPRESS_MODES.AUTO_8MB, "webp");
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: panel,
+              });
+              break;
+            }
+
+            case "stitch":
+            case "collage": {
+              const options = interaction.data?.options || [];
+              const attResolved = interaction.data?.resolved?.attachments || {};
+              const imageUrls: string[] = [];
+
+              for (const name of ["image1", "image2", "image3", "image4"]) {
+                const opt = options.find((o: any) => o.name === name);
+                if (opt?.value && attResolved[opt.value]?.url) {
+                  imageUrls.push(attResolved[opt.value].url);
+                }
+              }
+
+              if (imageUrls.length < 2) {
+                await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                  responsePayload: {
+                    embeds: [
+                      {
+                        title: "🌸 Butuh Minimal 2 Gambar Manis! 📷",
+                        color: BOT_THEME.COLOR_ROSE,
+                        description:
+                          "Untuk menyatukan gambar (stitch/kolase), kamu perlu melampirkan minimal **2 gambar** di `image1` dan `image2` yaa manis~ 🎀\n\n" +
+                          "Bisa sampai 4 gambar sekaligus lho! Cocok banget buat perbandingan *Before vs After* 💕",
+                      },
+                    ],
+                  },
+                });
+                break;
+              }
+
+              const panel = buildStitchPanel(
+                user,
+                imageUrls,
+                STITCH_LAYOUTS.HORIZONTAL,
+                STITCH_BORDERS.NONE
+              );
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: panel,
               });
               break;
             }
@@ -1031,6 +1113,174 @@ export async function POST(req: NextRequest) {
               title: "⏳ Sedang Mengirim Kado Manis... 🎁",
               color: BOT_THEME.COLOR_PINK,
               description: `Ayaa sedang memproses pengiriman **${amount.toLocaleString("id-ID")} ${resource === "limit" ? "Tiket Limit" : "Money"}** untuk <@${targetId}>~ ✨`,
+            },
+          ],
+          components: [],
+        },
+      });
+    }
+
+    // ---------------------------------------------------------
+    // Interactive Panel Buttons: Compress
+    // ---------------------------------------------------------
+    if (action === "cp_sw") {
+      const [, mode, format] = customId.split(":");
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+
+      const panel = buildCompressPanel(user, imageUrl, mode, format);
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "cp_run") {
+      const [, mode, format] = customId.split(":");
+      const imageUrl =
+        interaction.message?.embeds?.[0]?.image?.url ||
+        interaction.message?.attachments?.[0]?.url ||
+        "";
+
+      if (!imageUrl) {
+        return NextResponse.json({
+          type: 4,
+          data: { content: "❌ URL gambar tidak ditemukan.", flags: 64 },
+        });
+      }
+
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const attachment = {
+              id: "cp_img",
+              filename: "photo.png",
+              url: imageUrl,
+              size: 0,
+            };
+            const cpResult = await handleCompressCommand(user, attachment, {
+              mode,
+              format: format as any,
+            });
+            const delivered = await patchDiscordOriginalMessage(
+              applicationId,
+              interactionToken,
+              cpResult
+            );
+
+            if (!delivered && cpResult.fileAttachment) {
+              await refundUserBalance(
+                user.id,
+                ECONOMY.COMPRESS_COST_MONEY,
+                0,
+                "Discord gagal mengirim file Compress"
+              );
+            }
+          } catch (err) {
+            console.error("Background Compress button execution error:", err);
+          }
+        })()
+      );
+
+      return NextResponse.json({
+        type: 7,
+        data: {
+          embeds: [
+            {
+              title: "⏳ Sedang Mengompresi & Mengoptimalkan Gambar... 🗜️",
+              color: BOT_THEME.COLOR_SKY,
+              description: `Ayaa sedang mengecilkan ukuran gambarmu dengan mode **${mode}** (${format.toUpperCase()})~ ✨\nTunggu sebentar yaa manis! 💕`,
+              image: { url: imageUrl },
+            },
+          ],
+          components: [],
+        },
+      });
+    }
+
+    // ---------------------------------------------------------
+    // Interactive Panel Buttons: Stitch (Image Merger)
+    // ---------------------------------------------------------
+    if (action === "st_sw") {
+      const [, layout, border] = customId.split(":");
+      const fields = interaction.message?.embeds?.[0]?.fields || [];
+      const sourcesField = fields.find((f: any) => f.name?.includes("Sumber Gambar"));
+      const imageUrls = (sourcesField?.value || "").match(/https?:\/\/[^\s\)]+/g) || [];
+
+      if (imageUrls.length === 0) {
+        const fallbackUrl =
+          interaction.message?.embeds?.[0]?.image?.url ||
+          interaction.message?.attachments?.[0]?.url ||
+          "";
+        if (fallbackUrl) imageUrls.push(fallbackUrl);
+      }
+
+      const panel = buildStitchPanel(user, imageUrls, layout, border);
+      return NextResponse.json({ type: 7, data: panel });
+    }
+
+    if (action === "st_run") {
+      const [, layout, border] = customId.split(":");
+      const fields = interaction.message?.embeds?.[0]?.fields || [];
+      const sourcesField = fields.find((f: any) => f.name?.includes("Sumber Gambar"));
+      const imageUrls = (sourcesField?.value || "").match(/https?:\/\/[^\s\)]+/g) || [];
+
+      if (imageUrls.length < 2) {
+        return NextResponse.json({
+          type: 4,
+          data: { content: "❌ Butuh minimal 2 URL gambar untuk digabungkan.", flags: 64 },
+        });
+      }
+
+      const applicationId = interaction.application_id || process.env.DISCORD_CLIENT_ID;
+      const interactionToken = interaction.token;
+
+      waitUntil(
+        (async () => {
+          try {
+            const attachments = imageUrls.map((url: string, i: number) => ({
+              id: `stitch_img_${i}`,
+              filename: `photo_${i + 1}.png`,
+              url,
+              size: 0,
+            }));
+
+            const stitchResult = await handleStitchCommand(user, attachments, {
+              layout,
+              border,
+            });
+
+            const delivered = await patchDiscordOriginalMessage(
+              applicationId,
+              interactionToken,
+              stitchResult
+            );
+
+            if (!delivered && stitchResult.fileAttachment) {
+              await refundUserBalance(
+                user.id,
+                ECONOMY.STITCH_COST_MONEY,
+                0,
+                "Discord gagal mengirim file Stitch"
+              );
+            }
+          } catch (err) {
+            console.error("Background Stitch button execution error:", err);
+          }
+        })()
+      );
+
+      return NextResponse.json({
+        type: 7,
+        data: {
+          embeds: [
+            {
+              title: "⏳ Sedang Menggabungkan Gambar... 🎨",
+              color: BOT_THEME.COLOR_PURPLE,
+              description: `Ayaa sedang menyatukan **${imageUrls.length} gambar** dengan layout **${layout}**~ ✨\nTunggu sebentar yaa manis! 💕`,
+              image: { url: imageUrls[0] },
             },
           ],
           components: [],

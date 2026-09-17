@@ -105,6 +105,48 @@ const commands = [
     ],
   },
   {
+    name: "compress",
+    description: "Kecilkan ukuran file foto agar muat di Discord (<8MB/Non-Nitro) via tombol interaktif 🗜️",
+    options: [
+      {
+        name: "image",
+        description: "Foto yang ingin dikompres / dioptimalkan (maks 15 MB)",
+        type: 11, // ATTACHMENT
+        required: true,
+      },
+    ],
+  },
+  {
+    name: "stitch",
+    description: "Satukan 2-4 foto berdampingan/vertikal/grid (Before vs After) via tombol interaktif 🖼️",
+    options: [
+      {
+        name: "image1",
+        description: "Gambar pertama (Wajib)",
+        type: 11, // ATTACHMENT
+        required: true,
+      },
+      {
+        name: "image2",
+        description: "Gambar kedua (Wajib)",
+        type: 11, // ATTACHMENT
+        required: true,
+      },
+      {
+        name: "image3",
+        description: "Gambar ketiga (Opsional)",
+        type: 11, // ATTACHMENT
+        required: false,
+      },
+      {
+        name: "image4",
+        description: "Gambar keempat (Opsional)",
+        type: 11, // ATTACHMENT
+        required: false,
+      },
+    ],
+  },
+  {
     name: "help",
     description: "Tampilkan menu panduan imut Ayaa Bot~ 🐾",
   },

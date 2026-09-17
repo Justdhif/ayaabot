@@ -38,6 +38,40 @@ export function handleHelpCommand() {
               inline: false,
             },
             {
+              name: "🗜️ `/compress [image]`",
+              value:
+                "Kecilkan ukuran file foto agar muat dikirim di Discord (< 8 MB / Non-Nitro)! 📦\n" +
+                "• Mode Kompresi: `Auto Fit <8MB`, `Ringan (80%)`, `Sedang (65%)`, `Ekstrem (45%)`\n" +
+                "• Pilihan Format: `WebP (Paling Hemat)`, `JPG / MozJPEG`, atau `PNG`\n" +
+                "• Biaya hemat: **25 Money** (0 Tiket Limit)",
+              inline: false,
+            },
+            {
+              name: "🖼️ `/stitch [image1] [image2] (image3) (image4)`",
+              value:
+                "Satukan 2 hingga 4 foto menjadi satu gambar utuh! Cocok buat Before vs After 💕\n" +
+                "• Susunan Layout: `↔️ Berdampingan (Horizontal)`, `↕️ Atas-Bawah`, `🔲 Grid 2×2`\n" +
+                "• Pilihan Garis: `Tanpa Garis`, `Garis Putih`, atau `Garis Pink Manis 🌸`\n" +
+                "• Biaya: **50 Money** (0 Tiket Limit)",
+              inline: false,
+            },
+            {
+              name: "🎨 `/watermark [image] (text)`",
+              value:
+                "Tempel tanda kepemilikan/hak cipta transparan pada fotomu via tombol interaktif! 🌸\n" +
+                "• Posisi: Pojok Kanan Bawah, Kiri Bawah, Tengah, Kanan Atas\n" +
+                "• Opasitas: Tipis (40%), Normal (70%), Jelas (100%)\n" +
+                "• Biaya: **25 Money** (Bisa juga via klik kanan foto di chat!)",
+              inline: false,
+            },
+            {
+              name: "👤 `/avatar (user) (server)`",
+              value:
+                "Ambil foto profil user atau ikon server dalam kualitas maksimal hingga **4096px HD**! 🖼️\n" +
+                "• Dilengkapi tombol instan untuk menyulap foto jadi **2× HD** (Gratis lihat)",
+              inline: false,
+            },
+            {
               name: "🎁 `/gift [user] [amount] (resource) (message)`",
               value:
                 "Kirim kado manis koin atau tiket limit ke temanmu! 💕\n" +
@@ -67,7 +101,7 @@ export function handleHelpCommand() {
             url: BOT_THEME.BANNER_URL,
           },
           footer: {
-            text: "Ayaa Bot 🌸 • v1.2.0 • Made with lots of love 💕",
+            text: "Ayaa Bot 🌸 • v1.4.0 (Compression & Merger) • Made with lots of love 💕",
           },
         },
       ],

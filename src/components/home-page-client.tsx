@@ -26,6 +26,8 @@ import {
   Crown,
   Stamp,
   User as UserIcon,
+  Minimize2,
+  Columns,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -102,7 +104,7 @@ export function HomePageClient() {
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Badge variant="pink">
                   <Sparkles className="w-3.5 h-3.5 text-pink-600" />
-                  <span>v1.3.0 (Watermark &amp; HD Avatar)</span>
+                  <span>v1.4.0 (Compression &amp; Image Stitcher)</span>
                 </Badge>
               </div>
 
@@ -388,7 +390,47 @@ export function HomePageClient() {
               </div>
             </Card>
 
-            {/* Command 9: /help */}
+            {/* Command 9: /compress */}
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-500 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-500/30">
+                    <Minimize2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /compress [image]
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Biaya: 25 💰
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <Minimize2 className="w-4 h-4 text-pink-500 shrink-0" /> Image Optimizer &amp; Web Compression
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Perkecil ukuran file foto agar muat dikirim di Discord (<strong className="text-pink-950">&lt; 8 MB / Non-Nitro</strong>) tanpa merusak kualitas visual secara drastis. Dilengkapi tombol opsi <em>Auto Fit &lt;8MB</em>, <em>Ringan</em>, <em>Sedang</em>, dan <em>Ekstrem</em>!
+                </p>
+              </div>
+            </Card>
+
+            {/* Command 10: /stitch */}
+            <Card className="p-5 sm:p-6 flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
+                  <span className="bg-pink-600 text-white px-3 py-1.5 rounded-xl font-extrabold text-xs sm:text-sm font-mono inline-flex items-center gap-1.5 shadow-sm shadow-pink-600/30">
+                    <Columns className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" /> /stitch [image1] [image2]...
+                  </span>
+                  <Badge variant="pink" className="shrink-0 text-xs font-bold">
+                    Biaya: 50 💰
+                  </Badge>
+                </div>
+                <h3 className="font-extrabold text-base sm:text-lg text-pink-950 mb-1.5 flex items-center gap-1.5">
+                  <Columns className="w-4 h-4 text-pink-500 shrink-0" /> Image Merger &amp; Before/After Collage
+                </h3>
+                <p className="text-xs sm:text-sm text-pink-800/90 font-medium leading-relaxed">
+                  Satukan <strong>2 hingga 4 gambar</strong> menjadi satu dengan tata letak <em>Berdampingan (Horizontal)</em>, <em>Vertikal</em>, atau <em>Grid 2×2</em>. Sangat pas untuk memamerkan perbandingan <strong>Before vs After</strong> hasil sulap HD!
+                </p>
+              </div>
+            </Card>
+
+            {/* Command 11: /help */}
             <Card className="p-5 sm:p-6 flex flex-col justify-between">
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2.5 mb-3.5">
@@ -429,16 +471,92 @@ export function HomePageClient() {
           </div>
 
           <div className="space-y-6">
-            {/* Version 1.3.0 */}
-            <Card className="p-7 sm:p-8 relative overflow-hidden border-2 border-pink-400 bg-gradient-to-br from-white/95 via-pink-50/60 to-pink-100/50 shadow-lg shadow-pink-500/10">
+            {/* Version 1.4.0 */}
+            <Card className="p-7 sm:p-8 relative overflow-hidden border-2 border-pink-500 bg-gradient-to-br from-white/95 via-pink-50/70 to-pink-100/60 shadow-xl shadow-pink-500/15">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-200/70 mb-5">
                 <div className="flex items-center gap-2.5">
-                  <span className="bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-sm px-3.5 py-1 rounded-full shadow-sm shadow-pink-500/25">
+                  <span className="bg-gradient-to-r from-pink-600 to-rose-600 text-white font-black text-sm px-3.5 py-1 rounded-full shadow-sm shadow-pink-500/25">
+                    v1.4.0
+                  </span>
+                  <Badge variant="pink" className="border-pink-300">
+                    <Sparkles className="w-3.5 h-3.5 text-pink-600" />
+                    <span>Versi Terbaru • Image Optimizer &amp; Merger Studio</span>
+                  </Badge>
+                </div>
+                <span className="text-xs sm:text-sm text-pink-700 font-bold bg-pink-100 px-3 py-1 rounded-full">
+                  September 2026
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Minimize2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Image Optimizer &amp; Web Compression (/compress)
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Kecilkan ukuran file foto hingga &lt; 8 MB untuk pengguna Discord non-Nitro dengan mempertahankan visual yang tetap tajam. Dilengkapi opsi WebP, JPG, dan PNG!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Columns className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Image Merger &amp; Before/After Collage (/stitch)
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Gabungkan 2 hingga 4 foto menjadi satu kanvas dengan susunan Berdampingan (↔️ Before vs After), Vertikal (↕️), atau Grid 2×2 (🔲) disertai border pink manis.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Panel Tombol Interaktif Switch Instan
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Semua command media kini dilengkapi panel tombol interaktif instan (&lt;10ms) untuk memilih opsi, mode, dan layout sebelum foto diproses.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-white/85 p-4 rounded-2xl border border-pink-200/60 flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm sm:text-base text-pink-950">
+                      Daily Reminder Jam 05:00 WIB
+                    </h4>
+                    <p className="text-xs sm:text-sm text-pink-800/90 font-medium mt-1 leading-relaxed">
+                      Jadwal cron pengingat uang jajan otomatis menyapa server setiap jam 5 pagi WIB dengan kartu manis dan mention user yang sudah siap claim.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Version 1.3.0 */}
+            <Card className="p-7 sm:p-8 relative overflow-hidden border border-pink-300 bg-white/80 shadow-md">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-pink-200/70 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="bg-pink-100 text-pink-700 font-bold text-sm px-3.5 py-1 rounded-full">
                     v1.3.0
                   </span>
                   <Badge variant="pink" className="border-pink-300">
                     <Sparkles className="w-3.5 h-3.5 text-pink-600" />
-                    <span>Versi Terbaru • Media Utilities &amp; Anti-Rugi</span>
+                    <span>Media Utilities &amp; Anti-Rugi</span>
                   </Badge>
                 </div>
                 <span className="text-xs sm:text-sm text-pink-700 font-bold bg-pink-100 px-3 py-1 rounded-full">
