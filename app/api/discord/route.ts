@@ -5,6 +5,7 @@ import { getUserByDiscordId } from "@/services/economy.service";
 import {
   handleCommandInteraction,
   handleButtonInteraction,
+  handleModalInteraction,
   patchDiscordOriginalMessage,
 } from "@/discord";
 
@@ -117,6 +118,28 @@ export async function POST(req: NextRequest) {
     }
 
     return await handleButtonInteraction(interaction, user, discordUserId);
+  }
+
+  // 5. Handle Modal Submit Interactions (Type 5)
+  if (interaction.type === 5) {
+    if (!user) {
+      return NextResponse.json({
+        type: 4,
+        data: {
+          embeds: [
+            {
+              title: "🔒 Akses Terbatas yaa~ 🌸",
+              color: 0xff758f,
+              description:
+                "Maaf yaa manis, fitur ini hanya bisa digunakan oleh teman-teman yang sudah terdaftar di whitelist~ 🥺💕",
+            },
+          ],
+          flags: 64,
+        },
+      });
+    }
+
+    return await handleModalInteraction(interaction, user, discordUserId);
   }
 
   return NextResponse.json({ error: "Unsupported interaction type" }, { status: 400 });

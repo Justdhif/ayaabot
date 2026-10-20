@@ -6,3 +6,4 @@ export * from "./watermark.panel";
 export * from "./gift.panel";
 export * from "./compress.panel";
 export * from "./stitch.panel";
+export * from "./amprem.panel";

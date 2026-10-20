@@ -147,6 +147,10 @@ const commands = [
     ],
   },
   {
+    name: "amprem",
+    description: "Aktivasi Alight Motion Pro VIP 1 Tahun gratis via tombol & modal interaktif 🎬✨",
+  },
+  {
     name: "help",
     description: "Tampilkan menu panduan imut Ayaa Bot~ 🐾",
   },

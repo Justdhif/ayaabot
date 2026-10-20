@@ -87,6 +87,13 @@ export function handleHelpCommand() {
               inline: false,
             },
             {
+              name: "🎬 `/amprem`",
+              value:
+                "Aktivasi lisensi **Alight Motion Pro VIP 1 Tahun** gratis tanpa watermark! ✨\n" +
+                "• Lengkap dengan pop-up formulir (Modal) kirim link & verifikasi otomatis",
+              inline: false,
+            },
+            {
               name: "👛 `/balance`",
               value: "Cek isi dompet, sisa tiket limit & streak harianmu 🎀\n*Dilengkapi tombol interaktif langsung!*",
               inline: false,

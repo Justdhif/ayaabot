@@ -11,6 +11,7 @@ import { handleWatermarkCommand } from "@/commands/watermark";
 import { handleAvatarCommand } from "@/commands/avatar";
 import { handleCompressCommand } from "@/commands/compress";
 import { handleStitchCommand } from "@/commands/stitch";
+import { handleAmPremCommand } from "@/commands/amprem";
 import {
   buildHdPanel,
   buildFilterPanel,
@@ -353,6 +354,14 @@ export async function handleCommandInteraction(
         );
         await patchDiscordOriginalMessage(applicationId, interactionToken, {
           responsePayload: panel,
+        });
+        break;
+      }
+
+      case "amprem": {
+        const response = handleAmPremCommand(user);
+        await patchDiscordOriginalMessage(applicationId, interactionToken, {
+          responsePayload: response,
         });
         break;
       }
