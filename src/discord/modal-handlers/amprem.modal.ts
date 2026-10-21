@@ -58,8 +58,7 @@ export async function handleAmPremModals(
     waitUntil(
       (async () => {
         try {
-          await sendVerificationLink(email);
-          setAmPendingEmail(discordUserId, email);
+          await sendVerificationLink(email, discordUserId);
 
           const panel = buildAmPremLinkSentPanel(email);
           await patchDiscordOriginalMessage(applicationId, interactionToken, {
@@ -104,7 +103,7 @@ export async function handleAmPremModals(
     waitUntil(
       (async () => {
         try {
-          const result = await verifyMagicLink(email, magicLink);
+          const result = await verifyMagicLink(email, magicLink, discordUserId);
 
           if (result.isPremium) {
             clearAmPendingEmail(discordUserId);
