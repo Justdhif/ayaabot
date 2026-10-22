@@ -88,5 +88,33 @@ export async function handleAmPremButtons(
     });
   }
 
+  // 3. Tombol Buka Modal Cari Preset TikTok
+  if (action === "am_btn_find_preset_modal") {
+    return NextResponse.json({
+      type: 9, // MODAL
+      data: {
+        title: "🔍 Cari Preset Alight Motion",
+        custom_id: "am_modal_find_preset",
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "am_input_tiktok_url",
+                label: "URL Video TikTok",
+                style: 1, // Short
+                placeholder: "https://vt.tiktok.com/xxxx/ atau https://www.tiktok.com/@...",
+                min_length: 10,
+                max_length: 500,
+                required: true,
+              },
+            ],
+          },
+        ],
+      },
+    });
+  }
+
   return null;
 }

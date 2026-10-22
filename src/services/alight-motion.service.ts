@@ -151,3 +151,67 @@ export async function verifyMagicLink(email: string, magicLink: string, discordU
     premiumError: result.isPremium === false ? result.message : null,
   };
 }
+
+export interface PresetItem {
+  url: string;
+  type: string;
+  source: string;
+  label: string;
+  context: string;
+  author?: string;
+  isCreator?: boolean;
+}
+
+export interface FindPresetResult {
+  video: {
+    id: string;
+    url: string;
+    title: string;
+    author: {
+      id?: string;
+      username: string;
+      nickname?: string;
+      avatar?: string;
+    };
+    cover?: string;
+    stats?: {
+      likes?: number;
+      comments?: number;
+      shares?: number;
+      views?: number;
+    };
+  };
+  presets: PresetItem[];
+  totalPresetsFound: number;
+  totalCommentsScanned: number;
+  caption: string;
+  formattedText: string;
+}
+
+/**
+ * Mencari tautan preset Alight Motion dari caption & komentar video TikTok via amprem-api
+ */
+export async function findAlightPresets(tiktokUrl: string): Promise<FindPresetResult> {
+  const cleanUrl = tiktokUrl.trim();
+
+  const response = await fetch(`${AMPREM_API_BASE}/api/am/preset/find`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      url: cleanUrl,
+    }),
+  });
+
+  const result = await response.json().catch(() => null);
+
+  if (!response.ok || !result?.success) {
+    const errorMsg =
+      result?.message || result?.error || `Gagal mencari preset dari TikTok (${response.status})`;
+    throw new Error(errorMsg);
+  }
+
+  return result.data as FindPresetResult;
+}

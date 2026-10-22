@@ -12,6 +12,8 @@ import { handleAvatarCommand } from "@/commands/avatar";
 import { handleCompressCommand } from "@/commands/compress";
 import { handleStitchCommand } from "@/commands/stitch";
 import { handleAmPremCommand } from "@/commands/amprem";
+import { handlePresetCommand } from "@/commands/preset";
+import { findAlightPresets } from "@/services/alight-motion.service";
 import {
   buildHdPanel,
   buildFilterPanel,
@@ -20,6 +22,9 @@ import {
   buildGiftPanel,
   buildCompressPanel,
   buildStitchPanel,
+  buildPresetResultPanel,
+  buildPresetNotFoundPanel,
+  buildPresetErrorPanel,
 } from "@/components/panels";
 import { patchDiscordOriginalMessage } from "./client";
 
@@ -363,6 +368,48 @@ export async function handleCommandInteraction(
         await patchDiscordOriginalMessage(applicationId, interactionToken, {
           responsePayload: response,
         });
+        break;
+      }
+
+      case "ampreset": {
+        const options = interaction.data?.options || [];
+        const urlOption = options.find((opt: any) => opt.name === "url");
+        const tiktokUrl = urlOption?.value?.trim();
+
+        if (tiktokUrl) {
+          if (!tiktokUrl.includes("tiktok.com") && !tiktokUrl.includes("douyin")) {
+            await patchDiscordOriginalMessage(applicationId, interactionToken, {
+              responsePayload: buildPresetErrorPanel(
+                "URL tidak valid. Pastikan kamu menyertakan link video TikTok seperti: https://vt.tiktok.com/xxxx/ atau https://www.tiktok.com/@user/video/xxxx"
+              ),
+            });
+            break;
+          }
+
+          try {
+            const result = await findAlightPresets(tiktokUrl);
+            if (result.totalPresetsFound > 0) {
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: buildPresetResultPanel(result, tiktokUrl),
+              });
+            } else {
+              await patchDiscordOriginalMessage(applicationId, interactionToken, {
+                responsePayload: buildPresetNotFoundPanel(result, tiktokUrl),
+              });
+            }
+          } catch (err: any) {
+            console.error("Error finding presets in command:", err);
+            const errorMsg = err?.message || "Gagal memindai video TikTok.";
+            await patchDiscordOriginalMessage(applicationId, interactionToken, {
+              responsePayload: buildPresetErrorPanel(errorMsg),
+            });
+          }
+        } else {
+          const response = handlePresetCommand(user);
+          await patchDiscordOriginalMessage(applicationId, interactionToken, {
+            responsePayload: response,
+          });
+        }
         break;
       }
 

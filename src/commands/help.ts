@@ -94,6 +94,13 @@ export function handleHelpCommand() {
               inline: false,
             },
             {
+              name: "🔍 `/ampreset (url)`",
+              value:
+                "Cari dan ekstrak link preset Alight Motion otomatis dari video TikTok! 📱✨\n" +
+                "• Pindai caption, komentar disematkan, & komentar kreator (`alight.link`, Drive, dll)",
+              inline: false,
+            },
+            {
               name: "👛 `/balance`",
               value: "Cek isi dompet, sisa tiket limit & streak harianmu 🎀\n*Dilengkapi tombol interaktif langsung!*",
               inline: false,

@@ -151,6 +151,18 @@ const commands = [
     description: "Aktivasi Alight Motion Pro VIP 1 Tahun gratis via tombol & modal interaktif 🎬✨",
   },
   {
+    name: "ampreset",
+    description: "Cari link preset Alight Motion otomatis dari caption & komentar video TikTok 🔍✨",
+    options: [
+      {
+        name: "url",
+        description: "Link video TikTok (contoh: https://vt.tiktok.com/xxxx/)",
+        type: 3, // STRING
+        required: false,
+      },
+    ],
+  },
+  {
     name: "help",
     description: "Tampilkan menu panduan imut Ayaa Bot~ 🐾",
   },
