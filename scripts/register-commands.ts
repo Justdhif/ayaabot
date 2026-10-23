@@ -163,6 +163,18 @@ const commands = [
     ],
   },
   {
+    name: "bypass",
+    description: "Bypass link iklan/shortlink & dapatkan link unduh langsung (Mediafire, GDrive, dll) ⚡📦",
+    options: [
+      {
+        name: "url",
+        description: "Link iklan/shortlink/file yang ingin di-bypass (Mediafire, Sub2Unlock, dll)",
+        type: 3, // STRING
+        required: false,
+      },
+    ],
+  },
+  {
     name: "help",
     description: "Tampilkan menu panduan imut Ayaa Bot~ 🐾",
   },

@@ -101,6 +101,13 @@ export function handleHelpCommand() {
               inline: false,
             },
             {
+              name: "⚡ `/bypass (url)`",
+              value:
+                "Bypass shortlink iklan & ambil link download langsung file (Script ML, APK, dll)! 📦🔓\n" +
+                "• Mendukung Mediafire Direct CDN, GDrive, Sfile, Sub2Unlock, Pixeldrain, dll",
+              inline: false,
+            },
+            {
               name: "👛 `/balance`",
               value: "Cek isi dompet, sisa tiket limit & streak harianmu 🎀\n*Dilengkapi tombol interaktif langsung!*",
               inline: false,

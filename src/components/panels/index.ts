@@ -8,3 +8,4 @@ export * from "./compress.panel";
 export * from "./stitch.panel";
 export * from "./amprem.panel";
 export * from "./preset.panel";
+export * from "./bypass.panel";

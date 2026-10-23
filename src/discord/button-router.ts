@@ -10,6 +10,7 @@ import {
   handleCompressButtons,
   handleStitchButtons,
   handleAmPremButtons,
+  handleBypassButtons,
 } from "./button-handlers";
 
 export async function handleButtonInteraction(
@@ -24,6 +25,8 @@ export async function handleButtonInteraction(
 
   if (action.startsWith("btn_")) {
     response = await handleCommonButtons(interaction, user, action, customId, discordUserId);
+  } else if (action.startsWith("bp_")) {
+    response = await handleBypassButtons(interaction, user, action, customId, discordUserId);
   } else if (action.startsWith("am_")) {
     response = await handleAmPremButtons(interaction, user, action, customId, discordUserId);
   } else if (action.startsWith("hd_")) {

@@ -13,7 +13,9 @@ import { handleCompressCommand } from "@/commands/compress";
 import { handleStitchCommand } from "@/commands/stitch";
 import { handleAmPremCommand } from "@/commands/amprem";
 import { handlePresetCommand } from "@/commands/preset";
+import { handleBypassCommand } from "@/commands/bypass";
 import { findAlightPresets } from "@/services/alight-motion.service";
+import { bypassLink } from "@/services/bypass.service";
 import {
   buildHdPanel,
   buildFilterPanel,
@@ -25,6 +27,8 @@ import {
   buildPresetResultPanel,
   buildPresetNotFoundPanel,
   buildPresetErrorPanel,
+  buildBypassSuccessPanel,
+  buildBypassErrorPanel,
 } from "@/components/panels";
 import { patchDiscordOriginalMessage } from "./client";
 
@@ -406,6 +410,43 @@ export async function handleCommandInteraction(
           }
         } else {
           const response = handlePresetCommand(user);
+          await patchDiscordOriginalMessage(applicationId, interactionToken, {
+            responsePayload: response,
+          });
+        }
+        break;
+      }
+
+      case "bypass": {
+        const options = interaction.data?.options || [];
+        const urlOption = options.find((opt: any) => opt.name === "url");
+        const inputUrl = urlOption?.value?.trim();
+
+        if (inputUrl) {
+          if (!inputUrl.startsWith("http://") && !inputUrl.startsWith("https://")) {
+            await patchDiscordOriginalMessage(applicationId, interactionToken, {
+              responsePayload: buildBypassErrorPanel(
+                "URL tidak valid. Pastikan link diawali dengan http:// atau https://",
+                inputUrl
+              ),
+            });
+            break;
+          }
+
+          try {
+            const result = await bypassLink(inputUrl);
+            await patchDiscordOriginalMessage(applicationId, interactionToken, {
+              responsePayload: buildBypassSuccessPanel(result),
+            });
+          } catch (err: any) {
+            console.error("Error bypassing link in command:", err);
+            const errorMsg = err?.message || "Gagal melewati link.";
+            await patchDiscordOriginalMessage(applicationId, interactionToken, {
+              responsePayload: buildBypassErrorPanel(errorMsg, inputUrl),
+            });
+          }
+        } else {
+          const response = handleBypassCommand(user);
           await patchDiscordOriginalMessage(applicationId, interactionToken, {
             responsePayload: response,
           });
