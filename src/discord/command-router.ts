@@ -15,7 +15,7 @@ import { handleAmPremCommand } from "@/commands/amprem";
 import { handlePresetCommand } from "@/commands/preset";
 import { handleBypassCommand } from "@/commands/bypass";
 import { findAlightPresets } from "@/services/alight-motion.service";
-import { bypassLink } from "@/services/bypass.service";
+import { bypassLink, normalizeInputUrl } from "@/services/bypass.service";
 import {
   buildHdPanel,
   buildFilterPanel,
@@ -420,14 +420,16 @@ export async function handleCommandInteraction(
       case "bypass": {
         const options = interaction.data?.options || [];
         const urlOption = options.find((opt: any) => opt.name === "url");
-        const inputUrl = urlOption?.value?.trim();
+        const rawInputUrl = urlOption?.value?.trim();
 
-        if (inputUrl) {
-          if (!inputUrl.startsWith("http://") && !inputUrl.startsWith("https://")) {
+        if (rawInputUrl) {
+          const inputUrl = normalizeInputUrl(rawInputUrl);
+
+          if (!inputUrl || (!inputUrl.startsWith("http://") && !inputUrl.startsWith("https://"))) {
             await patchDiscordOriginalMessage(applicationId, interactionToken, {
               responsePayload: buildBypassErrorPanel(
-                "URL tidak valid. Pastikan link diawali dengan http:// atau https://",
-                inputUrl
+                "URL tidak valid. Masukkan tautan web seperti: https://sfl.gl/xxxx atau https://mediafire.com/file/xxxx",
+                rawInputUrl
               ),
             });
             break;
@@ -442,7 +444,7 @@ export async function handleCommandInteraction(
             console.error("Error bypassing link in command:", err);
             const errorMsg = err?.message || "Gagal melewati link.";
             await patchDiscordOriginalMessage(applicationId, interactionToken, {
-              responsePayload: buildBypassErrorPanel(errorMsg, inputUrl),
+              responsePayload: buildBypassErrorPanel(errorMsg, rawInputUrl),
             });
           }
         } else {

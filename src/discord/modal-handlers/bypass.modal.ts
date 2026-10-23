@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 import { User } from "@/db/schema";
-import { bypassLink } from "@/services/bypass.service";
+import { bypassLink, normalizeInputUrl } from "@/services/bypass.service";
 import { buildBypassSuccessPanel, buildBypassErrorPanel } from "@/components/panels";
 import { patchDiscordOriginalMessage } from "../client";
 import { getModalInputValue } from "./amprem.modal";
@@ -16,15 +16,16 @@ export async function handleBypassModals(
   const interactionToken = interaction.token;
 
   if (customId === "bp_modal_submit") {
-    const inputUrl = getModalInputValue(interaction, "bp_input_url");
+    const rawInput = getModalInputValue(interaction, "bp_input_url");
+    const inputUrl = normalizeInputUrl(rawInput);
 
     if (!inputUrl || (!inputUrl.startsWith("http://") && !inputUrl.startsWith("https://"))) {
       waitUntil(
         (async () => {
           await patchDiscordOriginalMessage(applicationId, interactionToken, {
             responsePayload: buildBypassErrorPanel(
-              "URL tidak valid. Pastikan link diawali dengan http:// atau https://",
-              inputUrl
+              "URL tidak valid. Masukkan tautan web seperti: https://sfl.gl/xxxx atau https://mediafire.com/file/xxxx",
+              rawInput
             ),
           });
         })()

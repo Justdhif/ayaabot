@@ -29,6 +29,35 @@ const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
 /**
+ * Normalisasi dan bersihkan input URL dari user (hapus bracket, markdown, tambah protocol jika absen)
+ */
+export function normalizeInputUrl(raw: string): string {
+  if (!raw) return "";
+  let cleaned = raw.trim();
+
+  // Strip markdown link brackets e.g. [https://...] or <https://...>
+  cleaned = cleaned.replace(/^[<\[("'\s]+|[>\])"'\s]+$/g, "").trim();
+
+  // If user pasted something like "LINK SCRIPT : [https://sfl.gl/xPULq]"
+  const urlMatch = cleaned.match(/https?:\/\/[^\s<>"'\])]+/i);
+  if (urlMatch) {
+    return urlMatch[0];
+  }
+
+  cleaned = cleaned.replace(/^[\/\\\[(<"']+/g, "").trim();
+  if (!cleaned.startsWith("http://") && !cleaned.startsWith("https://")) {
+    cleaned = `https://${cleaned}`;
+  }
+
+  try {
+    new URL(cleaned);
+    return cleaned;
+  } catch (_) {
+    return raw.trim();
+  }
+}
+
+/**
  * Format bytes into human readable string
  */
 function formatBytes(bytes: number): string {
@@ -44,6 +73,24 @@ function formatBytes(bytes: number): string {
  */
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Fetch dengan retry otomatis untuk mengatasi socket drop (ECONNRESET) sementara
+ */
+async function fetchWithRetry(url: string, init?: RequestInit, maxRetries = 2): Promise<Response> {
+  let lastError: any;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetch(url, init);
+    } catch (err: any) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        await sleep(1000);
+      }
+    }
+  }
+  throw lastError;
 }
 
 /**
@@ -114,8 +161,11 @@ function extractFilenameFromUrl(urlStr: string): string {
     if (last && last.includes(".") && !last.endsWith(".html") && !last.endsWith(".php")) {
       return decodeURIComponent(last);
     }
+    if (last) {
+      return decodeURIComponent(last);
+    }
   } catch (_) {}
-  return "Download_File.zip";
+  return "File_Unduhan";
 }
 
 /**
@@ -131,7 +181,7 @@ function detectFileType(filename: string): string {
   if (lower.endsWith(".pdf")) return "PDF Document 📄";
   if (lower.endsWith(".mp4") || lower.endsWith(".mkv")) return "Video File 🎬";
   if (lower.endsWith(".mp3") || lower.endsWith(".wav")) return "Audio File 🎵";
-  return "Direct File 📄";
+  return "File Unduhan 📄";
 }
 
 /**
@@ -139,7 +189,7 @@ function detectFileType(filename: string): string {
  */
 async function resolveMediafire(url: string): Promise<{ directUrl: string; filename: string; filesize?: string } | null> {
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -235,7 +285,7 @@ function resolveDropbox(url: string): { directUrl: string; filename: string } | 
  */
 async function resolveSfile(url: string): Promise<{ directUrl: string; filename: string; filesize?: string } | null> {
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
       },
@@ -259,7 +309,7 @@ async function resolveSfile(url: string): Promise<{ directUrl: string; filename:
     const filesize = sizeMatch ? sizeMatch[1].trim() : undefined;
 
     if (nextStepUrl.includes("sfile.mobi/download/")) {
-      const step2Res = await fetch(nextStepUrl, {
+      const step2Res = await fetchWithRetry(nextStepUrl, {
         headers: { "User-Agent": DEFAULT_USER_AGENT, Referer: url },
       });
       if (step2Res.ok) {
@@ -285,7 +335,7 @@ async function resolveSfile(url: string): Promise<{ directUrl: string; filename:
  */
 async function resolveSub2Unlock(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url, {
+    const res = await fetchWithRetry(url, {
       headers: { "User-Agent": DEFAULT_USER_AGENT },
     });
     if (!res.ok) return null;
@@ -322,7 +372,7 @@ async function resolveSafelinku(
 ): Promise<string | null> {
   try {
     // 1. Fetch initial sfl.gl / safelinku URL
-    const res1 = await fetch(urlStr, {
+    const res1 = await fetchWithRetry(urlStr, {
       headers: { "User-Agent": DEFAULT_USER_AGENT },
     });
     const html1 = await res1.text();
@@ -346,14 +396,9 @@ async function resolveSafelinku(
     }
 
     const redirectGateUrl = `${actionUrl}?ray_id=${rayId}&alias=${alias}`;
-    chain.push({
-      url: redirectGateUrl,
-      type: "Safelinku Khaddavi Gate",
-      label: "Melewati Verifikasi Safelinku (Khaddavi)",
-    });
 
     // 2. Fetch redirect gate & dapatkan session cookie
-    const res2 = await fetch(redirectGateUrl, {
+    const res2 = await fetchWithRetry(redirectGateUrl, {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Referer: urlStr,
@@ -369,7 +414,7 @@ async function resolveSafelinku(
     if (!cookies["__session"]) cookies["__session"] = rayId;
 
     const blogUrl1 = new URL(loc2, "https://app.khaddavi.net").toString();
-    const res3 = await fetch(blogUrl1, {
+    const res3 = await fetchWithRetry(blogUrl1, {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Referer: redirectGateUrl,
@@ -387,7 +432,7 @@ async function resolveSafelinku(
 
     // 3. Request /api/session (Step 1)
     const token1 = makeSafelinkuSessionToken(cookies["XSRF-TOKEN"] || "");
-    const resSession1 = await fetch("https://app.khaddavi.net/api/session", {
+    const resSession1 = await fetchWithRetry("https://app.khaddavi.net/api/session", {
       method: "POST",
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
@@ -411,7 +456,7 @@ async function resolveSafelinku(
     await sleep(1500);
 
     // 4. Request /api/verify
-    const resVerify = await fetch("https://app.khaddavi.net/api/verify", {
+    const resVerify = await fetchWithRetry("https://app.khaddavi.net/api/verify", {
       method: "POST",
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
@@ -436,7 +481,7 @@ async function resolveSafelinku(
     const blogUrl2 = new URL(targetPage2, "https://app.khaddavi.net").toString();
 
     // 5. Follow target redirect ke Page 2
-    const resPage2 = await fetch(blogUrl2, {
+    const resPage2 = await fetchWithRetry(blogUrl2, {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Referer: blogUrl1,
@@ -455,7 +500,7 @@ async function resolveSafelinku(
 
     // 6. Request /api/session (Step 2)
     const token2 = makeSafelinkuSessionToken(cookies["XSRF-TOKEN"] || "");
-    const resSession2 = await fetch("https://app.khaddavi.net/api/session", {
+    const resSession2 = await fetchWithRetry("https://app.khaddavi.net/api/session", {
       method: "POST",
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
@@ -481,7 +526,7 @@ async function resolveSafelinku(
     // 7. Request /api/go untuk mendapatkan link ready/go akhir
     const key = Math.floor(Math.random() * 1000);
     const size = `${(1920 + key) * 2}.${(1080 + key) * 2}`;
-    const resGo = await fetch("https://app.khaddavi.net/api/go", {
+    const resGo = await fetchWithRetry("https://app.khaddavi.net/api/go", {
       method: "POST",
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
@@ -499,7 +544,7 @@ async function resolveSafelinku(
     const readyGoUrl = goData.url;
 
     // 8. Fetch ready/go untuk ekstrak tautan tujuan asli (destination URL)
-    const resReady = await fetch(readyGoUrl, {
+    const resReady = await fetchWithRetry(readyGoUrl, {
       headers: { "User-Agent": DEFAULT_USER_AGENT },
     });
     const readyHtml = await resReady.text();
@@ -509,6 +554,11 @@ async function resolveSafelinku(
 
     if (destMatch && destMatch[1]) {
       const destinationUrl = destMatch[1].replace(/\\\//g, "/");
+      chain.push({
+        url: redirectGateUrl,
+        type: "Safelinku Khaddavi Gate",
+        label: "Melewati Verifikasi Safelinku (Khaddavi)",
+      });
       chain.push({
         url: destinationUrl,
         type: "Safelinku Destination",
@@ -530,7 +580,7 @@ async function resolveGenericLandingOrShortlinkPage(
   urlStr: string
 ): Promise<{ redirectUrl?: string; primaryFileUrl?: string; variants?: BypassVariant[]; label?: string } | null> {
   try {
-    const res = await fetch(urlStr, {
+    const res = await fetchWithRetry(urlStr, {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -695,7 +745,7 @@ function unwrapQueryParams(urlStr: string): string | null {
  */
 async function followHttpRedirect(urlStr: string): Promise<string | null> {
   try {
-    const res = await fetch(urlStr, {
+    const res = await fetchWithRetry(urlStr, {
       method: "HEAD",
       redirect: "manual",
       headers: { "User-Agent": DEFAULT_USER_AGENT },
@@ -709,7 +759,7 @@ async function followHttpRedirect(urlStr: string): Promise<string | null> {
     }
   } catch (_) {
     try {
-      const res = await fetch(urlStr, {
+      const res = await fetchWithRetry(urlStr, {
         method: "GET",
         redirect: "manual",
         headers: { "User-Agent": DEFAULT_USER_AGENT },
@@ -730,7 +780,7 @@ async function followHttpRedirect(urlStr: string): Promise<string | null> {
  */
 async function inspectDirectFile(urlStr: string): Promise<{ filename?: string; filesize?: string }> {
   try {
-    const res = await fetch(urlStr, {
+    const res = await fetchWithRetry(urlStr, {
       method: "HEAD",
       headers: { "User-Agent": DEFAULT_USER_AGENT },
     });
@@ -762,7 +812,11 @@ async function inspectDirectFile(urlStr: string): Promise<{ filename?: string; f
  */
 export async function bypassLink(initialUrl: string): Promise<BypassResult> {
   const startTime = Date.now();
-  const cleanUrl = initialUrl.trim();
+  const cleanUrl = normalizeInputUrl(initialUrl);
+
+  if (!cleanUrl || (!cleanUrl.startsWith("http://") && !cleanUrl.startsWith("https://"))) {
+    throw new Error("URL tidak valid. Masukkan link lengkap (contoh: https://sfl.gl/xxxx atau https://mediafire.com/file/xxxx)");
+  }
 
   const chain: BypassHop[] = [
     {
@@ -973,12 +1027,16 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
   }
 
   // Jika URL tujuan berujung pada file langsung (.zip, .apk, .rar, dll)
-  const isDirectFileFormat =
-    /\.(zip|apk|rar|7z|tar|gz|pdf|mp4|mp3|exe|iso)$/i.test(currentUrl) ||
-    currentUrl.includes("download") ||
-    isDirectDownload;
+  const pathnameOnly = currentUrl.split("?")[0].toLowerCase();
+  const hasRealFileExt = /\.(zip|apk|rar|7z|tar|gz|pdf|mp4|mp3|exe|iso)$/i.test(pathnameOnly);
+  const isKnownShortlink =
+    currentUrl.includes("sfl.gl") ||
+    currentUrl.includes("safelinku") ||
+    currentUrl.includes("khaddavi") ||
+    currentUrl.includes("sub2unlock") ||
+    currentUrl.includes("rekonise");
 
-  if (isDirectFileFormat && !isDirectDownload) {
+  if (hasRealFileExt && !isKnownShortlink && !isDirectDownload) {
     directDownloadUrl = currentUrl;
     destinationUrl = currentUrl;
     isDirectDownload = true;
@@ -989,6 +1047,13 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
     const inspected = await inspectDirectFile(directDownloadUrl);
     if (inspected.filename) filename = inspected.filename;
     if (inspected.filesize) filesize = inspected.filesize;
+  }
+
+  // VALIDASI MUTLAK: Jika bypass tidak berhasil mendapatkan direct download
+  if (!isDirectDownload) {
+    throw new Error(
+      "Tidak dapat mengekstrak file unduhan langsung dari tautan ini. Pastikan link masih aktif atau coba buka tautan sumbernya."
+    );
   }
 
   const executionTimeMs = Date.now() - startTime;
