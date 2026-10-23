@@ -64,6 +64,14 @@ export function buildBypassSuccessPanel(result: BypassResult) {
     })
     .join("\n");
 
+  const variantsDisplay =
+    result.variants && result.variants.length > 1
+      ? `\n\n🎁 **Pilihan Varian File Ditemukan (${result.variants.length}):**\n` +
+        result.variants
+          .map((v, i) => `${i === 0 ? "⭐" : "🔹"} **${v.name}:** [Buka File](${v.url})`)
+          .join("\n")
+      : "";
+
   const embed = {
     title: "🎉 Link Berhasil Di-Bypass! 📦✨",
     url: result.directDownloadUrl,
@@ -75,8 +83,9 @@ export function buildBypassSuccessPanel(result: BypassResult) {
       `📁 **Tipe File:** ${result.filetype || "File Unduhan"}\n` +
       `⏱️ **Waktu Proses:** \`${result.executionTimeMs} ms\`\n\n` +
       `🔗 **Rantai Bypass (${result.chain.length} Tahap):**\n` +
-      `${chainDisplay}\n\n` +
-      `*Klik tombol hijau di bawah untuk mengunduh file langsung ke HP/PC kamu:* 👇`,
+      `${chainDisplay}` +
+      variantsDisplay +
+      `\n\n*Klik tombol di bawah untuk mengunduh file langsung ke HP/PC kamu:* 👇`,
     footer: {
       text: "Ayaa Bot 🌸 • Direct Download Link Ready",
     },
@@ -109,6 +118,23 @@ export function buildBypassSuccessPanel(result: BypassResult) {
       url: result.destinationUrl,
       emoji: { name: "🔗" },
     });
+  }
+
+  // Tombol Varian Tambahan (jika ada, maksimal sampai total 5 tombol)
+  if (result.variants && result.variants.length > 1) {
+    for (let i = 1; i < result.variants.length; i++) {
+      if (actionButtons.length >= 5) break;
+      const v = result.variants[i];
+      if (v.url && (v.url.startsWith("http://") || v.url.startsWith("https://"))) {
+        actionButtons.push({
+          type: 2,
+          style: 5,
+          label: v.name.length > 20 ? v.name.slice(0, 18) + ".." : v.name,
+          url: v.url,
+          emoji: { name: "📦" },
+        });
+      }
+    }
   }
 
   if (actionButtons.length > 0) {
