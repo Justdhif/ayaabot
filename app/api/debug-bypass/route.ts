@@ -1,169 +1,88 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-function parseCookies(cookieHeaders: any): Record<string, string> {
-  if (!cookieHeaders) return {};
-  const cookies: Record<string, string> = {};
-  const parts = Array.isArray(cookieHeaders) ? cookieHeaders : [cookieHeaders];
-  for (const part of parts) {
-    const rawPairs = String(part).split(/,(?=\s*[a-zA-Z0-9_-]+=)/);
-    for (const raw of rawPairs) {
-      const match = raw.trim().match(/^([^=]+)=([^;]+)/);
-      if (match) {
-        cookies[match[1].trim()] = match[2].trim();
-      }
-    }
-  }
-  return cookies;
-}
-
-function stringifyCookies(cookieObj: Record<string, string>): string {
-  return Object.entries(cookieObj)
-    .map(([k, v]) => `${k}=${v}`)
-    .join("; ");
-}
-
-function makeSafelinkuSessionToken(xsrfToken: string): string {
-  const dummyData =
-    "webgl:Google Inc. (NVIDIA)|ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Direct3D11)||audio:124.043||canvas:cf4c6f||fonts:Arial,Calibri||system:Win32||env:chrome||network:4g";
-  const c = crypto.createHash("sha256").update(dummyData).digest("hex");
-  const u = "#" + Buffer.from(c).toString("base64");
-  const decoded = decodeURIComponent(xsrfToken || "");
-  return decoded.slice(0, 128 - u.length) + u;
-}
-
 export async function GET(req: NextRequest) {
-  const targetUrl = req.nextUrl.searchParams.get("url") || "https://sfl.gl/xPULq";
-  const logs: any[] = [];
+  const target = req.nextUrl.searchParams.get("url") || "https://sfl.gl/xPULq";
+  const results: any = {};
 
-  const headers = {
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-    "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
-  };
-
+  // 1. Direct fetch
   try {
-    logs.push({ step: "1. Fetch initial URL", url: targetUrl });
-    const res1 = await fetch(targetUrl, { headers });
-    const html1 = await res1.text();
-    const rayId = html1.match(/name=["']ray_id["']\s+value=["']([^"']+)["']/i)?.[1];
-    const alias = html1.match(/name=["']alias["']\s+value=["']([^"']+)["']/i)?.[1];
-    const actionUrl =
-      html1.match(/action=["'](https?:\/\/[^"']+)["']/i)?.[1] ||
-      "https://app.khaddavi.net/redirect.php";
-
-    logs.push({
-      step: "1. Result",
-      status: res1.status,
-      htmlLength: html1.length,
-      htmlSnippet: html1.slice(0, 400),
-      rayId,
-      alias,
-      actionUrl,
-    });
-
-    if (!rayId || !alias) {
-      return NextResponse.json({ success: false, reason: "Missing rayId or alias in Step 1", logs });
-    }
-
-    const redirectGateUrl = `${actionUrl}?ray_id=${rayId}&alias=${alias}`;
-    logs.push({ step: "2. Fetch redirect gate", url: redirectGateUrl });
-
-    const res2 = await fetch(redirectGateUrl, {
-      headers: { ...headers, Referer: targetUrl },
-      redirect: "manual",
-    });
-
-    const loc2 = res2.headers.get("location") || "";
-    const rawSetCookie2 = (res2.headers as any).getSetCookie ? (res2.headers as any).getSetCookie() : res2.headers.get("set-cookie");
-    const cookies = parseCookies(rawSetCookie2);
-    if (!cookies["__session"]) cookies["__session"] = rayId;
-
-    logs.push({
-      step: "2. Result",
-      status: res2.status,
-      location: loc2,
-      rawSetCookie: rawSetCookie2,
-      parsedCookies: cookies,
-    });
-
-    if (!loc2) {
-      return NextResponse.json({ success: false, reason: "No location header in Step 2", logs });
-    }
-
-    const blogUrl1 = new URL(loc2, "https://app.khaddavi.net").toString();
-    logs.push({ step: "3. Fetch blogUrl1", url: blogUrl1 });
-
-    const res3 = await fetch(blogUrl1, {
+    const r1 = await fetch(target, {
       headers: {
-        ...headers,
-        Referer: redirectGateUrl,
-        Cookie: stringifyCookies(cookies),
-      },
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "id,en;q=0.9",
+      }
     });
-
-    const rawSetCookie3 = (res3.headers as any).getSetCookie ? (res3.headers as any).getSetCookie() : res3.headers.get("set-cookie");
-    Object.assign(cookies, parseCookies(rawSetCookie3));
-
-    logs.push({
-      step: "3. Result",
-      status: res3.status,
-      cookiesAfterStep3: cookies,
-    });
-
-    const token1 = makeSafelinkuSessionToken(cookies["XSRF-TOKEN"] || "");
-    logs.push({ step: "4. Request /api/session (Step 1)", token: token1 });
-
-    const resSession1 = await fetch("https://app.khaddavi.net/api/session", {
-      method: "POST",
-      headers: {
-        ...headers,
-        Referer: blogUrl1,
-        Origin: "https://app.khaddavi.net",
-        "Content-Type": "application/json",
-        Cookie: stringifyCookies(cookies),
-      },
-      body: JSON.stringify({ _token: token1 }),
-    });
-
-    const session1Text = await resSession1.text();
-    const rawSetCookieS1 = (resSession1.headers as any).getSetCookie ? (resSession1.headers as any).getSetCookie() : resSession1.headers.get("set-cookie");
-    Object.assign(cookies, parseCookies(rawSetCookieS1));
-
-    logs.push({
-      step: "4. Result",
-      status: resSession1.status,
-      body: session1Text,
-      cookiesAfterStep4: cookies,
-    });
-
-    // Verify step
-    const resVerify = await fetch("https://app.khaddavi.net/api/verify", {
-      method: "POST",
-      headers: {
-        ...headers,
-        Referer: blogUrl1,
-        Origin: "https://app.khaddavi.net",
-        "Content-Type": "application/json",
-        Cookie: stringifyCookies(cookies),
-      },
-      body: JSON.stringify({ _a: 0 }),
-    });
-
-    const verifyText = await resVerify.text();
-    logs.push({
-      step: "5. Verify Result",
-      status: resVerify.status,
-      body: verifyText,
-    });
-
-    return NextResponse.json({ success: true, logs });
-  } catch (err: any) {
-    logs.push({ step: "Exception Caught", error: err.message, stack: err.stack });
-    return NextResponse.json({ success: false, error: err.message, logs });
+    const text1 = await r1.text();
+    results["direct"] = {
+      status: r1.status,
+      length: text1.length,
+      hasRayId: text1.includes('name="ray_id"'),
+      snippet: text1.slice(0, 200)
+    };
+  } catch (e: any) {
+    results["direct"] = { error: e.message };
   }
+
+  // 2. Test app.khaddavi.net directly
+  try {
+    const rK = await fetch("https://app.khaddavi.net", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+      }
+    });
+    results["khaddavi_direct"] = {
+      status: rK.status,
+      hasCf: (await rK.text()).includes("Just a moment")
+    };
+  } catch (e: any) {
+    results["khaddavi_direct"] = { error: e.message };
+  }
+
+  // 3. Test api.allorigins.win
+  try {
+    const rAo = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`);
+    const textAo = await rAo.text();
+    results["allorigins"] = {
+      status: rAo.status,
+      length: textAo.length,
+      hasRayId: textAo.includes('name="ray_id"'),
+      snippet: textAo.slice(0, 200)
+    };
+  } catch (e: any) {
+    results["allorigins"] = { error: e.message };
+  }
+
+  // 4. Test corsproxy.io
+  try {
+    const rCp = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(target)}`);
+    const textCp = await rCp.text();
+    results["corsproxy_io"] = {
+      status: rCp.status,
+      length: textCp.length,
+      hasRayId: textCp.includes('name="ray_id"'),
+      snippet: textCp.slice(0, 200)
+    };
+  } catch (e: any) {
+    results["corsproxy_io"] = { error: e.message };
+  }
+
+  // 5. Test codetabs
+  try {
+    const rCt = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}`);
+    const textCt = await rCt.text();
+    results["codetabs"] = {
+      status: rCt.status,
+      length: textCt.length,
+      hasRayId: textCt.includes('name="ray_id"'),
+      snippet: textCt.slice(0, 200)
+    };
+  } catch (e: any) {
+    results["codetabs"] = { error: e.message };
+  }
+
+  return NextResponse.json(results);
 }
