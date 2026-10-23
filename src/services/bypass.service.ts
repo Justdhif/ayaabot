@@ -364,6 +364,38 @@ async function resolveSub2Unlock(url: string): Promise<string | null> {
 }
 
 /**
+ * Helper untuk fetch dengan fallback Google Translate proxy saat menghadapi proteksi Cloudflare 403 / Under Attack
+ */
+async function fetchWithCloudflareFallback(url: string, headers: Record<string, string>): Promise<string> {
+  let html = "";
+  try {
+    const res = await fetchWithRetry(url, { headers });
+    if (res.status === 200) {
+      html = await res.text();
+    }
+  } catch (_) {}
+
+  // Jika terkena Cloudflare 403, 503, atau halaman tantangan bot
+  if (!html || html.includes("<title>Just a moment...</title>") || html.includes("challenge-platform")) {
+    try {
+      const gUrl = `https://translate.google.com/translate?sl=auto&tl=en&u=${encodeURIComponent(url)}`;
+      const gRes = await fetchWithRetry(gUrl, {
+        headers: {
+          "User-Agent": DEFAULT_USER_AGENT,
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
+        },
+      });
+      if (gRes.ok) {
+        html = await gRes.text();
+      }
+    } catch (_) {}
+  }
+
+  return html;
+}
+
+/**
  * Resolver 7: Safelinku & Khaddavi Gate Bypasser (sfl.gl, safelinku.com, khaddavi.net)
  */
 async function resolveSafelinku(
@@ -371,11 +403,12 @@ async function resolveSafelinku(
   chain: BypassHop[]
 ): Promise<string | null> {
   try {
-    // 1. Fetch initial sfl.gl / safelinku URL
-    const res1 = await fetchWithRetry(urlStr, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
+    // 1. Fetch initial sfl.gl / safelinku URL (didukung fallback crawler anti-Cloudflare)
+    const html1 = await fetchWithCloudflareFallback(urlStr, {
+      "User-Agent": DEFAULT_USER_AGENT,
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
     });
-    const html1 = await res1.text();
 
     let rayId = html1.match(/name=["']ray_id["']\s+value=["']([^"']+)["']/i)?.[1];
     let alias = html1.match(/name=["']alias["']\s+value=["']([^"']+)["']/i)?.[1];
@@ -383,11 +416,10 @@ async function resolveSafelinku(
       html1.match(/action=["'](https?:\/\/[^"']+)["']/i)?.[1] ||
       "https://app.khaddavi.net/redirect.php";
 
-    if (!rayId || !alias) {
+    if (!alias) {
       try {
         const u = new URL(urlStr);
-        rayId = rayId || u.searchParams.get("ray_id") || undefined;
-        alias = alias || u.searchParams.get("alias") || undefined;
+        alias = u.pathname.split("/").filter(Boolean).pop() || u.searchParams.get("alias") || undefined;
       } catch (_) {}
     }
 
@@ -544,10 +576,22 @@ async function resolveSafelinku(
     const readyGoUrl = goData.url;
 
     // 8. Fetch ready/go untuk ekstrak tautan tujuan asli (destination URL)
-    const resReady = await fetchWithRetry(readyGoUrl, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
-    });
-    const readyHtml = await resReady.text();
+    let readyHtml = "";
+    try {
+      const resReady = await fetchWithRetry(readyGoUrl, {
+        headers: { "User-Agent": DEFAULT_USER_AGENT },
+      });
+      if (resReady.ok) {
+        readyHtml = await resReady.text();
+      }
+    } catch (_) {}
+
+    if (!readyHtml.includes("location.href") && !readyHtml.includes("window.location")) {
+      readyHtml = await fetchWithCloudflareFallback(readyGoUrl, {
+        "User-Agent": DEFAULT_USER_AGENT,
+      });
+    }
+
     const destMatch =
       readyHtml.match(/location\.href\s*=\s*["']([^"']+)["']/i) ||
       readyHtml.match(/window\.location\.href\s*=\s*["']([^"']+)["']/i);
@@ -580,25 +624,36 @@ async function resolveGenericLandingOrShortlinkPage(
   urlStr: string
 ): Promise<{ redirectUrl?: string; primaryFileUrl?: string; variants?: BypassVariant[]; label?: string } | null> {
   try {
-    const res = await fetchWithRetry(urlStr, {
-      headers: {
+    let html = "";
+    try {
+      const res = await fetchWithRetry(urlStr, {
+        headers: {
+          "User-Agent": DEFAULT_USER_AGENT,
+          Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+      });
+
+      if (res.ok) {
+        const contentType = res.headers.get("content-type") || "";
+        if (
+          contentType.includes("text/html") ||
+          contentType.includes("application/xhtml") ||
+          contentType === ""
+        ) {
+          html = await res.text();
+        }
+      }
+    } catch (_) {}
+
+    // Fallback crawler jika blog atau landing page diproteksi Cloudflare Under Attack
+    if (!html || html.includes("<title>Just a moment...</title>")) {
+      html = await fetchWithCloudflareFallback(urlStr, {
         "User-Agent": DEFAULT_USER_AGENT,
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      },
-    });
-
-    if (!res.ok) return null;
-    const contentType = res.headers.get("content-type") || "";
-    // Hanya proses konten HTML
-    if (
-      !contentType.includes("text/html") &&
-      !contentType.includes("application/xhtml") &&
-      contentType !== ""
-    ) {
-      return null;
+      });
     }
 
-    const html = await res.text();
+    if (!html) return null;
 
     // 1. PRIORITAS UTAMA: Ekstraksi Item Unduhan & Varian File Hosting
     // (Mediafire, GDrive, Sfile, Pixeldrain, Dropbox, dsb)
