@@ -84,6 +84,25 @@ function makeSafelinkuSessionToken(xsrfToken: string): string {
 }
 
 /**
+ * Cek apakah sebuah URL mengarah ke file hosting atau file arsip
+ */
+function isFileOrHostUrl(url: string): boolean {
+  const lower = url.toLowerCase();
+  return (
+    lower.includes("mediafire.com/file/") ||
+    lower.includes("mediafire.com/download/") ||
+    lower.includes("drive.google.com/") ||
+    lower.includes("sfile.mobi/") ||
+    lower.includes("sfile.co/") ||
+    lower.includes("pixeldrain.com/u/") ||
+    lower.includes("krakenfiles.com/view/") ||
+    lower.includes("dropbox.com/s/") ||
+    lower.includes("dropbox.com/scl/") ||
+    /\.(zip|apk|rar|7z|tar|gz|exe|bin|iso)(?:$|[?#])/i.test(url)
+  );
+}
+
+/**
  * Ekstraksi nama file dari path URL
  */
 function extractFilenameFromUrl(urlStr: string): string {
@@ -196,7 +215,23 @@ function resolvePixeldrain(url: string): { directUrl: string; filename: string }
 }
 
 /**
- * Resolver 4: Sfile.mobi Direct Link
+ * Resolver 4: Dropbox Direct Link
+ */
+function resolveDropbox(url: string): { directUrl: string; filename: string } | null {
+  if (!url.includes("dropbox.com/s/") && !url.includes("dropbox.com/scl/")) return null;
+  const directUrl = url.includes("dl=0")
+    ? url.replace(/([?&])dl=0/g, "$1dl=1")
+    : url.includes("dl=1")
+    ? url
+    : `${url}${url.includes("?") ? "&" : "?"}dl=1`;
+  return {
+    directUrl,
+    filename: extractFilenameFromUrl(url),
+  };
+}
+
+/**
+ * Resolver 5: Sfile.mobi Direct Link
  */
 async function resolveSfile(url: string): Promise<{ directUrl: string; filename: string; filesize?: string } | null> {
   try {
@@ -246,7 +281,7 @@ async function resolveSfile(url: string): Promise<{ directUrl: string; filename:
 }
 
 /**
- * Resolver 5: Sub2Unlock, Sub4Unlock & Social Unlock Gates
+ * Resolver 6: Sub2Unlock, Sub4Unlock & Social Unlock Gates
  */
 async function resolveSub2Unlock(url: string): Promise<string | null> {
   try {
@@ -279,7 +314,7 @@ async function resolveSub2Unlock(url: string): Promise<string | null> {
 }
 
 /**
- * Resolver 6: Safelinku & Khaddavi Gate Bypasser (sfl.gl, safelinku.com, khaddavi.net)
+ * Resolver 7: Safelinku & Khaddavi Gate Bypasser (sfl.gl, safelinku.com, khaddavi.net)
  */
 async function resolveSafelinku(
   urlStr: string,
@@ -488,69 +523,129 @@ async function resolveSafelinku(
 }
 
 /**
- * Resolver 7: Ekstraksi Link Unduhan dari Halaman Blog / Script Skin Landing Page
+ * Resolver Universal: Memindai halaman web/blog/shortlink apa pun
+ * untuk mengekstrak Link Unduhan File Hosting, Meta Refresh, atau Tombol Get Link
  */
-async function resolveLandingPageContent(
+async function resolveGenericLandingOrShortlinkPage(
   urlStr: string
-): Promise<{ primaryUrl: string; variants: BypassVariant[] } | null> {
+): Promise<{ redirectUrl?: string; primaryFileUrl?: string; variants?: BypassVariant[]; label?: string } | null> {
   try {
     const res = await fetch(urlStr, {
-      headers: { "User-Agent": DEFAULT_USER_AGENT },
+      headers: {
+        "User-Agent": DEFAULT_USER_AGENT,
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
     });
+
     if (!res.ok) return null;
+    const contentType = res.headers.get("content-type") || "";
+    // Hanya proses konten HTML
+    if (
+      !contentType.includes("text/html") &&
+      !contentType.includes("application/xhtml") &&
+      contentType !== ""
+    ) {
+      return null;
+    }
+
     const html = await res.text();
 
+    // 1. PRIORITAS UTAMA: Ekstraksi Item Unduhan & Varian File Hosting
+    // (Mediafire, GDrive, Sfile, Pixeldrain, Dropbox, dsb)
     const variants: BypassVariant[] = [];
+    const seenUrls = new Set<string>();
 
-    // Cari blok item download terstruktur (seperti download-item di blog skin ML)
-    const items = html.split(/class=["'][^"']*download-item[^"']*["']/i).slice(1);
+    function addVariant(name: string, url: string) {
+      let fullUrl = url.trim();
+      if (fullUrl.startsWith("//")) fullUrl = "https:" + fullUrl;
+      if (fullUrl.startsWith("/")) {
+        try {
+          fullUrl = new URL(fullUrl, urlStr).toString();
+        } catch (_) {}
+      }
+      if (!fullUrl.startsWith("http://") && !fullUrl.startsWith("https://")) return;
+      if (seenUrls.has(fullUrl)) return;
+      seenUrls.add(fullUrl);
+      variants.push({
+        name: name.replace(/<[^>]+>/g, "").trim() || `Pilihan ${variants.length + 1}`,
+        url: fullUrl,
+      });
+    }
+
+    // A. Cari blok item download terstruktur (seperti download-item di blog skin ML/game)
+    const items = html
+      .split(
+        /class=["'][^"']*(?:download-item|download_box|link-item|dl-item|script-item)[^"']*["']/i
+      )
+      .slice(1);
     for (const block of items) {
-      const chunk = block.slice(0, 1000);
-      const nameMatch = chunk.match(/class=["'][^"']*script-name[^"']*["'][^>]*>([^<]+)<\/div>/i);
+      const chunk = block.slice(0, 1500);
+      const nameMatch =
+        chunk.match(/class=["'][^"']*(?:script-name|file-name|title|name)[^"']*["'][^>]*>([^<]+)<\/div>/i) ||
+        chunk.match(/<h[2-6][^>]*>([^<]+)<\/h[2-6]>/i);
       const linkMatch = chunk.match(/href=["'](https?:\/\/[^"']+)["']/i);
-      if (linkMatch) {
-        const link = linkMatch[1].trim();
-        if (
-          link.includes("mediafire") ||
-          link.includes("drive.google") ||
-          link.includes("sfile") ||
-          link.includes("pixeldrain") ||
-          link.match(/\.(zip|apk|rar|7z)/i)
-        ) {
-          variants.push({
-            name: nameMatch ? nameMatch[1].trim() : `Pilihan ${variants.length + 1}`,
-            url: link,
-          });
-        }
+      if (linkMatch && isFileOrHostUrl(linkMatch[1])) {
+        addVariant(nameMatch ? nameMatch[1] : "File Unduhan", linkMatch[1]);
       }
     }
 
-    // Jika tidak ada item terstruktur, cari semua link file host di dalam halaman
-    if (variants.length === 0) {
-      const linkRegex =
-        /href=["'](https?:\/\/(?:www\.)?(?:mediafire\.com\/file\/|drive\.google\.com\/|sfile\.mobi\/|pixeldrain\.com\/u\/)[^"']+)["']/gi;
-      let lMatch;
-      const seen = new Set<string>();
-      while ((lMatch = linkRegex.exec(html)) !== null) {
-        const url = lMatch[1];
-        if (!seen.has(url)) {
-          seen.add(url);
-          variants.push({
-            name: `File Unduhan ${variants.length + 1}`,
-            url,
-          });
-        }
+    // B. Cari semua tag <a> yang mengarah ke file host atau direct archive
+    const anchorRegex = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+    let aMatch;
+    while ((aMatch = anchorRegex.exec(html)) !== null) {
+      const href = aMatch[1];
+      const text = aMatch[2].replace(/<[^>]+>/g, "").trim();
+      if (isFileOrHostUrl(href)) {
+        const cleanName = text.length > 2 && text.length < 50 ? text : "File Unduhan";
+        addVariant(cleanName, href);
       }
     }
 
+    // Jika ditemukan tautan file unduhan di halaman ini, prioritaskan!
     if (variants.length > 0) {
       return {
-        primaryUrl: variants[0].url,
+        primaryFileUrl: variants[0].url,
         variants,
       };
     }
+
+    // 2. JIKA BUKAN HALAMAN DOWNLOAD: Periksa apakah ini halaman pengalihan / gate
+    // A. Cek Button "Get Link" atau tombol tujuan di halaman iklan
+    const getLinkMatch =
+      html.match(
+        /<a[^>]*href=["'](https?:\/\/[^"']+)["'][^>]*class=["'][^"']*(?:get-link|btn-main|go-link|download-btn)[^"']*["']/i
+      ) ||
+      html.match(
+        /<a[^>]*class=["'][^"']*(?:get-link|btn-main|go-link|download-btn)[^"']*["'][^>]*href=["'](https?:\/\/[^"']+)["']/i
+      ) ||
+      html.match(
+        /<a[^>]*id=["'](?:get-link|btn-main|btn-download|downloadButton)["'][^>]*href=["'](https?:\/\/[^"']+)["']/i
+      );
+    if (getLinkMatch && getLinkMatch[1]) {
+      const target = getLinkMatch[1].trim();
+      if (target !== urlStr && (isFileOrHostUrl(target) || target.startsWith("http"))) {
+        return { redirectUrl: target, label: "Tombol Get Link / Tujuan Terbuka" };
+      }
+    }
+
+    // B. Cek Meta Refresh: <meta http-equiv="refresh" content="0;url=...">
+    const metaMatch = html.match(
+      /<meta[^>]*http-equiv=["']refresh["'][^>]*content=["']\d+;\s*url=([^"']+)["']/i
+    );
+    if (metaMatch && metaMatch[1]) {
+      try {
+        const redirectUrl = new URL(metaMatch[1].trim(), urlStr).toString();
+        if (
+          redirectUrl !== urlStr &&
+          !redirectUrl.includes("google.com") &&
+          !redirectUrl.includes("facebook.com")
+        ) {
+          return { redirectUrl, label: "Meta Refresh Redirect" };
+        }
+      } catch (_) {}
+    }
   } catch (err) {
-    console.error("Error in resolveLandingPageContent:", err);
+    console.error("Error in resolveGenericLandingOrShortlinkPage:", err);
   }
   return null;
 }
@@ -663,7 +758,7 @@ async function inspectDirectFile(urlStr: string): Promise<{ filename?: string; f
 }
 
 /**
- * Main Bypass Engine (Multi-Tier Recursive Link Resolver)
+ * Main Bypass Engine (Multi-Tier Universal Link Resolver)
  */
 export async function bypassLink(initialUrl: string): Promise<BypassResult> {
   const startTime = Date.now();
@@ -766,7 +861,24 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
       }
     }
 
-    // 5. Cek Safelinku / Khaddavi Shortlink (sfl.gl, safelinku.com, khaddavi.net)
+    // 5. Cek Dropbox
+    if (currentUrl.includes("dropbox.com/s/") || currentUrl.includes("dropbox.com/scl/")) {
+      const db = resolveDropbox(currentUrl);
+      if (db) {
+        filename = db.filename || filename;
+        directDownloadUrl = db.directUrl;
+        destinationUrl = currentUrl;
+        isDirectDownload = true;
+        chain.push({
+          url: db.directUrl,
+          type: "Dropbox Direct",
+          label: "Dropbox Direct Link",
+        });
+        break;
+      }
+    }
+
+    // 6. Cek Safelinku / Khaddavi Shortlink (sfl.gl, safelinku.com, khaddavi.net)
     if (
       currentUrl.includes("sfl.gl") ||
       currentUrl.includes("safelinku.com") ||
@@ -781,7 +893,7 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
       }
     }
 
-    // 6. Cek Sub2Unlock / Sub4Unlock & Social Gates
+    // 7. Cek Sub2Unlock / Sub4Unlock & Social Gates
     if (
       currentUrl.includes("sub2unlock") ||
       currentUrl.includes("sub4unlock") ||
@@ -800,27 +912,7 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
       }
     }
 
-    // 7. Cek Landing Page / Blogspot / Web Page yang memuat link unduhan (Script Skin dsb)
-    if (
-      currentUrl.includes("blogspot.") ||
-      currentUrl.includes("wordpress.") ||
-      currentUrl.includes(".html") ||
-      currentUrl.includes(".php")
-    ) {
-      const pageResult = await resolveLandingPageContent(currentUrl);
-      if (pageResult && pageResult.primaryUrl && pageResult.primaryUrl !== currentUrl) {
-        variants = pageResult.variants;
-        chain.push({
-          url: pageResult.primaryUrl,
-          type: "Download Link Extracted",
-          label: "Link Unduhan Ditemukan di Web",
-        });
-        currentUrl = pageResult.primaryUrl;
-        continue;
-      }
-    }
-
-    // 8. Cek Query Param Redirect Unwrapper
+    // 8. Cek Query Param Redirect Unwrapper (?url=, ?dest=, ?link=, dsb)
     const unwrapped = unwrapQueryParams(currentUrl);
     if (unwrapped && unwrapped !== currentUrl) {
       chain.push({
@@ -833,7 +925,7 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
       continue;
     }
 
-    // 9. Follow HTTP 3xx Redirect
+    // 9. Follow HTTP 3xx Redirect (TinyURL, Bitly, Cuttly, dsb)
     const nextRedirect = await followHttpRedirect(currentUrl);
     if (nextRedirect && nextRedirect !== currentUrl) {
       chain.push({
@@ -846,7 +938,37 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
       continue;
     }
 
-    // Jika tidak ada rule khusus yang cocok lagi, hentikan loop
+    // 10. Universal Web Page Inspector (Blog, Website Script Skin, Intermediate Landing Page)
+    // Berlaku untuk domain apa pun yang memuat tombol unduh atau pengalihan (Meta Refresh / Get Link)
+    const pageResolution = await resolveGenericLandingOrShortlinkPage(currentUrl);
+    if (pageResolution) {
+      if (pageResolution.primaryFileUrl && pageResolution.primaryFileUrl !== currentUrl) {
+        if (pageResolution.variants && pageResolution.variants.length > 0) {
+          variants = pageResolution.variants;
+        }
+        chain.push({
+          url: pageResolution.primaryFileUrl,
+          type: "Download Link Extracted",
+          label: "Tautan Unduhan Ditemukan di Halaman",
+        });
+        currentUrl = pageResolution.primaryFileUrl;
+        destinationUrl = pageResolution.primaryFileUrl;
+        continue;
+      }
+
+      if (pageResolution.redirectUrl && pageResolution.redirectUrl !== currentUrl) {
+        chain.push({
+          url: pageResolution.redirectUrl,
+          type: "Page Redirect",
+          label: pageResolution.label || "Pengalihan Halaman Terdeteksi",
+        });
+        currentUrl = pageResolution.redirectUrl;
+        destinationUrl = pageResolution.redirectUrl;
+        continue;
+      }
+    }
+
+    // Jika tidak ada rule yang cocok lagi, hentikan loop
     break;
   }
 
