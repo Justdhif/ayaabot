@@ -141,6 +141,7 @@ function isFileOrHostUrl(url: string): boolean {
     lower.includes("drive.google.com/") ||
     lower.includes("sfile.mobi/") ||
     lower.includes("sfile.co/") ||
+    lower.includes("safefileku.com/") ||
     lower.includes("pixeldrain.com/u/") ||
     lower.includes("krakenfiles.com/view/") ||
     lower.includes("dropbox.com/s/") ||
@@ -364,7 +365,7 @@ async function resolveSub2Unlock(url: string): Promise<string | null> {
 }
 
 /**
- * Helper untuk fetch dengan fallback Google Translate proxy saat menghadapi proteksi Cloudflare 403 / Under Attack
+ * Helper untuk fetch dengan multi-tier fallback (Google Translate & Jina Reader) saat menghadapi proteksi Cloudflare 403 / Turnstile
  */
 async function fetchWithCloudflareFallback(url: string, headers: Record<string, string>): Promise<string> {
   let html = "";
@@ -377,6 +378,7 @@ async function fetchWithCloudflareFallback(url: string, headers: Record<string, 
 
   // Jika terkena Cloudflare 403, 503, atau halaman tantangan bot
   if (!html || html.includes("<title>Just a moment...</title>") || html.includes("challenge-platform")) {
+    // 1. Coba Google Translate proxy crawler
     try {
       const gUrl = `https://translate.google.com/translate?sl=auto&tl=en&u=${encodeURIComponent(url)}`;
       const gRes = await fetchWithRetry(gUrl, {
@@ -387,12 +389,61 @@ async function fetchWithCloudflareFallback(url: string, headers: Record<string, 
         },
       });
       if (gRes.ok) {
-        html = await gRes.text();
+        const gText = await gRes.text();
+        if (gText && !gText.includes("<title>Just a moment...</title>")) {
+          html = gText;
+        }
       }
     } catch (_) {}
+
+    // 2. Coba Jina Reader jika Google Translate gagal atau masih terhalang Cloudflare
+    if (!html || html.includes("<title>Just a moment...</title>")) {
+      try {
+        const jUrl = `https://r.jina.ai/${url}`;
+        const jRes = await fetchWithRetry(jUrl, {
+          headers: {
+            "User-Agent": DEFAULT_USER_AGENT,
+            "X-Return-Format": "html",
+          },
+        });
+        if (jRes.ok) {
+          const jText = await jRes.text();
+          if (jText && !jText.includes("<title>Just a moment...</title>")) {
+            html = jText;
+          }
+        }
+      } catch (_) {}
+    }
   }
 
   return html;
+}
+
+/**
+ * Resolver Safefileku (safefileku.com): Ekstrak nama file asli dan ukuran file
+ */
+async function resolveSafefileku(url: string): Promise<{ filename: string; filesize?: string; destinationUrl: string } | null> {
+  if (!url.includes("safefileku.com")) return null;
+  try {
+    const html = await fetchWithCloudflareFallback(url, { "User-Agent": DEFAULT_USER_AGENT });
+    if (!html) return null;
+
+    const titleMatch =
+      html.match(/<h1[^>]*>([^<]+)<\/h1>/i) ||
+      html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
+    let filename = titleMatch
+      ? titleMatch[1].replace(/\s*-\s*Safefileku$/i, "").trim()
+      : extractFilenameFromUrl(url);
+
+    const sizeMatch =
+      html.match(/Size<\/div>\s*<div[^>]*>([^<]+)<\/div>/i) ||
+      html.match(/class=["'][^"']*size[^"']*["'][^>]*>([^<]+)<\/div>/i);
+    const filesize = sizeMatch ? sizeMatch[1].trim() : undefined;
+
+    return { filename, filesize, destinationUrl: url };
+  } catch (_) {
+    return null;
+  }
 }
 
 /**
@@ -987,6 +1038,24 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
       }
     }
 
+    // 5.5 Cek Safefileku (safefileku.com)
+    if (currentUrl.includes("safefileku.com")) {
+      const sfk = await resolveSafefileku(currentUrl);
+      if (sfk) {
+        filename = sfk.filename || filename;
+        filesize = sfk.filesize || filesize;
+        destinationUrl = currentUrl;
+        directDownloadUrl = currentUrl;
+        isDirectDownload = true;
+        chain.push({
+          url: currentUrl,
+          type: "Safefileku File Host",
+          label: "Halaman File Safefileku Terbuka",
+        });
+        break;
+      }
+    }
+
     // 6. Cek Safelinku / Khaddavi Shortlink (sfl.gl, safelinku.com, khaddavi.net)
     if (
       currentUrl.includes("sfl.gl") ||
@@ -1104,7 +1173,14 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
     if (inspected.filesize) filesize = inspected.filesize;
   }
 
-  // VALIDASI MUTLAK: Jika bypass tidak berhasil mendapatkan direct download
+  // Jika bypass berhasil melewati rintangan / shortlink (shortlink terurai ke file host / web tujuan)
+  const hasBypassedGate = chain.length > 1 || destinationUrl !== cleanUrl;
+  if (!isDirectDownload && hasBypassedGate) {
+    directDownloadUrl = destinationUrl;
+    isDirectDownload = true;
+  }
+
+  // VALIDASI MUTLAK: Jika bypass tidak berhasil mendapatkan direct download atau melewati rintangan apa pun
   if (!isDirectDownload) {
     throw new Error(
       "Tidak dapat mengekstrak file unduhan langsung dari tautan ini. Pastikan link masih aktif atau coba buka tautan sumbernya."
