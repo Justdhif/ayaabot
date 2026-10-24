@@ -72,12 +72,21 @@ export function buildBypassSuccessPanel(result: BypassResult) {
           .join("\n")
       : "";
 
+  const isCdnDirect = result.isDirectDownload;
+  const descriptionHeader = isCdnDirect
+    ? `Tautan unduhan bersih berhasil diekstrak tanpa harus melewati iklan/rintangan! 💕\n\n`
+    : `Rintangan shortlink & iklan jebakan berhasil dilewati sampai ke halaman file bersih! 💕\n\n`;
+
+  const actionHint = isCdnDirect
+    ? `\n\n*Klik tombol di bawah untuk mengunduh file langsung ke HP/PC kamu:* 👇`
+    : `\n\n💡 *Catatan: File berada di host tujuan (Safefileku dll). Klik tombol di bawah untuk membuka file tanpa iklan shortlink berulang:* 👇`;
+
   const embed = {
-    title: "🎉 Link Berhasil Di-Bypass! 📦✨",
-    url: result.directDownloadUrl,
+    title: isCdnDirect ? "🎉 Link Berhasil Di-Bypass! 📦✨" : "🔓 Shortlink Berhasil Dilewati! 📦✨",
+    url: result.directDownloadUrl || result.destinationUrl,
     color: BOT_THEME.COLOR_PINK,
     description:
-      `Tautan unduhan bersih berhasil diekstrak tanpa harus melewati iklan/rintangan! 💕\n\n` +
+      `${descriptionHeader}` +
       `📦 **Nama File:** **\`${result.filename}\`**\n` +
       (result.filesize ? `📊 **Ukuran File:** \`${result.filesize}\`\n` : "") +
       `📁 **Tipe File:** ${result.filetype || "File Unduhan"}\n` +
@@ -85,28 +94,30 @@ export function buildBypassSuccessPanel(result: BypassResult) {
       `🔗 **Rantai Bypass (${result.chain.length} Tahap):**\n` +
       `${chainDisplay}` +
       variantsDisplay +
-      `\n\n*Klik tombol di bawah untuk mengunduh file langsung ke HP/PC kamu:* 👇`,
+      actionHint,
     footer: {
-      text: "Ayaa Bot 🌸 • Direct Download Link Ready",
+      text: isCdnDirect ? "Ayaa Bot 🌸 • Direct Download Link Ready" : "Ayaa Bot 🌸 • Destination File Page Ready",
     },
   };
 
   const components: ActionRowComponent[] = [];
   const actionButtons: ButtonComponent[] = [];
 
-  // Tombol 1: Unduh Langsung
-  if (result.directDownloadUrl && (result.directDownloadUrl.startsWith("http://") || result.directDownloadUrl.startsWith("https://"))) {
+  // Tombol 1: Unduh Langsung (CDN) atau Buka Halaman File Bersih (Bypassed)
+  const targetUrl = result.directDownloadUrl || result.destinationUrl;
+  if (targetUrl && (targetUrl.startsWith("http://") || targetUrl.startsWith("https://"))) {
     actionButtons.push({
       type: 2,
       style: 5, // Link
-      label: "📥 Download File Langsung",
-      url: result.directDownloadUrl,
-      emoji: { name: "🚀" },
+      label: isCdnDirect ? "📥 Download File Langsung" : "📦 Buka Halaman File Bersih",
+      url: targetUrl,
+      emoji: { name: isCdnDirect ? "🚀" : "🔗" },
     });
   }
 
   // Tombol 2: Buka Halaman File Asli (jika berbeda dari CDN langsung)
   if (
+    isCdnDirect &&
     result.destinationUrl &&
     result.destinationUrl !== result.directDownloadUrl &&
     (result.destinationUrl.startsWith("http://") || result.destinationUrl.startsWith("https://"))

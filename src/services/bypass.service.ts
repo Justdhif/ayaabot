@@ -1046,7 +1046,7 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
         filesize = sfk.filesize || filesize;
         destinationUrl = currentUrl;
         directDownloadUrl = currentUrl;
-        isDirectDownload = true;
+        isDirectDownload = false; // Halaman file host, bukan CDN direct stream
         chain.push({
           url: currentUrl,
           type: "Safefileku File Host",
@@ -1175,13 +1175,12 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
 
   // Jika bypass berhasil melewati rintangan / shortlink (shortlink terurai ke file host / web tujuan)
   const hasBypassedGate = chain.length > 1 || destinationUrl !== cleanUrl;
-  if (!isDirectDownload && hasBypassedGate) {
+  if (!directDownloadUrl) {
     directDownloadUrl = destinationUrl;
-    isDirectDownload = true;
   }
 
-  // VALIDASI MUTLAK: Jika bypass tidak berhasil mendapatkan direct download atau melewati rintangan apa pun
-  if (!isDirectDownload) {
+  // VALIDASI MUTLAK: Hanya gagal jika tidak ada rintangan yang berhasil dilewati sama sekali
+  if (!isDirectDownload && !hasBypassedGate) {
     throw new Error(
       "Tidak dapat mengekstrak file unduhan langsung dari tautan ini. Pastikan link masih aktif atau coba buka tautan sumbernya."
     );
