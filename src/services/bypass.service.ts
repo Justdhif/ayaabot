@@ -282,7 +282,7 @@ function resolveDropbox(url: string): { directUrl: string; filename: string } | 
 }
 
 /**
- * Resolver 5: Sfile.mobi Direct Link
+ * Resolver 5: Sfile.mobi & Sfile.co Direct Link
  */
 async function resolveSfile(url: string): Promise<{ directUrl: string; filename: string; filesize?: string } | null> {
   try {
@@ -295,21 +295,30 @@ async function resolveSfile(url: string): Promise<{ directUrl: string; filename:
     if (!res.ok) return null;
     const html = await res.text();
 
-    const dlMatch =
-      html.match(/id=["']download["'][^>]*href=["']([^"']+)["']/i) ||
-      html.match(/class=["'][^"']*btn-primary download[^"']*["'][^>]*href=["']([^"']+)["']/i) ||
-      html.match(/href=["'](https?:\/\/[^"']*sfile\.mobi\/download\/[^"']+)["']/i);
-
-    if (!dlMatch) return null;
-    let nextStepUrl = dlMatch[1];
-
-    const titleMatch = html.match(/<h1 class=["'][^"']*text-xs-center[^"']*["']>([^<]+)<\/h1>/i);
-    const filename = titleMatch ? titleMatch[1].trim() : extractFilenameFromUrl(url);
+    const titleMatch =
+      html.match(/<h1 class=["'][^"']*text-xs-center[^"']*["']>([^<]+)<\/h1>/i) ||
+      html.match(/<h1[^>]*>([^<]+)<\/h1>/i) ||
+      html.match(/<meta property=["']og:title["'] content=["']([^"']+)["']/i);
+    let filename = titleMatch ? titleMatch[1].replace(/^Download\s+/i, "").trim() : extractFilenameFromUrl(url);
+    if (!filename.includes(".")) filename = `${filename}.zip`;
 
     const sizeMatch = html.match(/\(([0-9.]+\s*(?:KB|MB|GB|B))\)/i);
     const filesize = sizeMatch ? sizeMatch[1].trim() : undefined;
 
-    if (nextStepUrl.includes("sfile.mobi/download/")) {
+    let nextStepUrl = url;
+    const dwMatch = html.match(/data-dw-url=["']([^"']+)["']/i);
+    const dlMatch =
+      html.match(/id=["']download["'][^>]*href=["']([^"']+)["']/i) ||
+      html.match(/class=["'][^"']*btn-primary download[^"']*["'][^>]*href=["']([^"']+)["']/i) ||
+      html.match(/href=["'](https?:\/\/[^"']*(?:sfile\.mobi|sfile\.co)\/download\/[^"']+)["']/i);
+
+    if (dwMatch && dwMatch[1] && dwMatch[1] !== "#") {
+      nextStepUrl = dwMatch[1];
+    } else if (dlMatch && dlMatch[1] && dlMatch[1] !== "#") {
+      nextStepUrl = dlMatch[1];
+    }
+
+    if (nextStepUrl.includes("/download/") && !nextStepUrl.includes("fid=")) {
       const step2Res = await fetchWithRetry(nextStepUrl, {
         headers: { "User-Agent": DEFAULT_USER_AGENT, Referer: url },
       });
@@ -478,6 +487,7 @@ async function resolveSafelinku(
       return null;
     }
 
+    const gateOrigin = new URL(actionUrl).origin;
     const redirectGateUrl = `${actionUrl}?ray_id=${rayId}&alias=${alias}`;
 
     // 2. Fetch redirect gate & dapatkan session cookie
@@ -496,7 +506,7 @@ async function resolveSafelinku(
     );
     if (!cookies["__session"]) cookies["__session"] = rayId;
 
-    const blogUrl1 = new URL(loc2, "https://app.khaddavi.net").toString();
+    const blogUrl1 = new URL(loc2, gateOrigin).toString();
     const res3 = await fetchWithRetry(blogUrl1, {
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
@@ -515,12 +525,12 @@ async function resolveSafelinku(
 
     // 3. Request /api/session (Step 1)
     const token1 = makeSafelinkuSessionToken(cookies["XSRF-TOKEN"] || "");
-    const resSession1 = await fetchWithRetry("https://app.khaddavi.net/api/session", {
+    const resSession1 = await fetchWithRetry(`${gateOrigin}/api/session`, {
       method: "POST",
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Referer: blogUrl1,
-        Origin: "https://app.khaddavi.net",
+        Origin: gateOrigin,
         "Content-Type": "application/json",
         Cookie: stringifyCookies(cookies),
       },
@@ -539,12 +549,12 @@ async function resolveSafelinku(
     await sleep(1500);
 
     // 4. Request /api/verify
-    const resVerify = await fetchWithRetry("https://app.khaddavi.net/api/verify", {
+    const resVerify = await fetchWithRetry(`${gateOrigin}/api/verify`, {
       method: "POST",
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Referer: blogUrl1,
-        Origin: "https://app.khaddavi.net",
+        Origin: gateOrigin,
         "Content-Type": "application/json",
         Cookie: stringifyCookies(cookies),
       },
@@ -561,7 +571,7 @@ async function resolveSafelinku(
     );
 
     const targetPage2 = verifyData.target || "/redirect.php";
-    const blogUrl2 = new URL(targetPage2, "https://app.khaddavi.net").toString();
+    const blogUrl2 = new URL(targetPage2, gateOrigin).toString();
 
     // 5. Follow target redirect ke Page 2
     const resPage2 = await fetchWithRetry(blogUrl2, {
@@ -583,12 +593,12 @@ async function resolveSafelinku(
 
     // 6. Request /api/session (Step 2)
     const token2 = makeSafelinkuSessionToken(cookies["XSRF-TOKEN"] || "");
-    const resSession2 = await fetchWithRetry("https://app.khaddavi.net/api/session", {
+    const resSession2 = await fetchWithRetry(`${gateOrigin}/api/session`, {
       method: "POST",
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Referer: resPage2.url,
-        Origin: "https://app.khaddavi.net",
+        Origin: gateOrigin,
         "Content-Type": "application/json",
         Cookie: stringifyCookies(cookies),
       },
@@ -609,12 +619,12 @@ async function resolveSafelinku(
     // 7. Request /api/go untuk mendapatkan link ready/go akhir
     const key = Math.floor(Math.random() * 1000);
     const size = `${(1920 + key) * 2}.${(1080 + key) * 2}`;
-    const resGo = await fetchWithRetry("https://app.khaddavi.net/api/go", {
+    const resGo = await fetchWithRetry(`${gateOrigin}/api/go`, {
       method: "POST",
       headers: {
         "User-Agent": DEFAULT_USER_AGENT,
         Referer: resPage2.url,
-        Origin: "https://app.khaddavi.net",
+        Origin: gateOrigin,
         "Content-Type": "application/json",
         Cookie: stringifyCookies(cookies),
       },
@@ -649,15 +659,16 @@ async function resolveSafelinku(
 
     if (destMatch && destMatch[1]) {
       const destinationUrl = destMatch[1].replace(/\\\//g, "/");
+      const gateHost = new URL(redirectGateUrl).hostname;
       chain.push({
         url: redirectGateUrl,
-        type: "Safelinku Khaddavi Gate",
-        label: "Melewati Verifikasi Safelinku (Khaddavi)",
+        type: "Safelink Gateway",
+        label: `Melewati Verifikasi Gateway (${gateHost})`,
       });
       chain.push({
         url: destinationUrl,
-        type: "Safelinku Destination",
-        label: "Tujuan Asli Safelinku Terbuka",
+        type: "Safelink Destination",
+        label: "Tujuan Asli Shortlink Terbuka",
       });
       return destinationUrl;
     }
@@ -1056,12 +1067,15 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
       }
     }
 
-    // 6. Cek Safelinku / Khaddavi Shortlink (sfl.gl, safelinku.com, khaddavi.net)
+    // 6. Cek Safelink / Khaddavi / AdSafeLink Engine Shortlinks
     if (
       currentUrl.includes("sfl.gl") ||
       currentUrl.includes("safelinku.com") ||
       currentUrl.includes("safelinkblogger.com") ||
-      currentUrl.includes("khaddavi.net")
+      currentUrl.includes("khaddavi.net") ||
+      currentUrl.includes("adsafelink.com") ||
+      currentUrl.includes("gociwidey.com") ||
+      currentUrl.includes("safelink")
     ) {
       const bypassedSfl = await resolveSafelinku(currentUrl, chain);
       if (bypassedSfl && bypassedSfl !== currentUrl) {
@@ -1157,6 +1171,8 @@ export async function bypassLink(initialUrl: string): Promise<BypassResult> {
     currentUrl.includes("sfl.gl") ||
     currentUrl.includes("safelinku") ||
     currentUrl.includes("khaddavi") ||
+    currentUrl.includes("adsafelink") ||
+    currentUrl.includes("gociwidey") ||
     currentUrl.includes("sub2unlock") ||
     currentUrl.includes("rekonise");
 
